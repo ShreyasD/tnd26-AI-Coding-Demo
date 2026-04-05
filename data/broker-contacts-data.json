@@ -1,0 +1,84 @@
+{
+    "records": [
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactCarolineKingsleyRef"
+            },
+            "FirstName": "Caroline",
+            "LastName": "Kingsley",
+            "Phone": "617-244-3672",
+            "Email": "caroline@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactMichaelJonesRef"
+            },
+            "FirstName": "Michael",
+            "LastName": "Jones",
+            "Phone": "617-244-3672",
+            "Email": "michael@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactJonathanBradleyRef"
+            },
+            "FirstName": "Jonathan",
+            "LastName": "Bradley",
+            "Phone": "617-244-3672",
+            "Email": "jonathan@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactJenniferWuRef"
+            },
+            "FirstName": "Jennifer",
+            "LastName": "Wu",
+            "Phone": "617-244-3672",
+            "Email": "jen@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactOliviaGreenRef"
+            },
+            "FirstName": "Olivia",
+            "LastName": "Green",
+            "Phone": "617-244-3672",
+            "Email": "olivia@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactMiriamAupontRef"
+            },
+            "FirstName": "Miriam",
+            "LastName": "Aupont",
+            "Phone": "617-244-3672",
+            "Email": "miriam@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactMichelleLambertRef"
+            },
+            "FirstName": "Michelle",
+            "LastName": "Lambert",
+            "Phone": "617-244-3672",
+            "Email": "michelle@dreamhouse.demo"
+        },
+        {
+            "attributes": {
+                "type": "Contact",
+                "referenceId": "BrokerContactVictorOchoaRef"
+            },
+            "FirstName": "Victor",
+            "LastName": "Ochoa",
+            "Phone": "617-244-3672",
+            "Email": "victor@dreamhouse.demo"
+        }
+    ]
+}
