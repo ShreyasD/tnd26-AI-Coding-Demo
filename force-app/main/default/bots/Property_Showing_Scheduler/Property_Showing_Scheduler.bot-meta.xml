@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bot xmlns="http://soap.sforce.com/2006/04/metadata">
+    <agentDSLEnabled>true</agentDSLEnabled>
+    <agentType>AgentforceEmployeeAgent</agentType>
+    <botMlDomain>
+        <label>Property Showing Scheduler</label>
+        <name>Property_Showing_Scheduler</name>
+    </botMlDomain>
+    <botSource>None</botSource>
+    <description>Schedules property showing events for employees by creating calendar events linked to properties and their broker contacts</description>
+    <label>Property Showing Scheduler</label>
+    <logPrivateConversationData>false</logPrivateConversationData>
+    <richContentEnabled>true</richContentEnabled>
+    <sessionTimeout>0</sessionTimeout>
+    <type>InternalCopilot</type>
+</Bot>
