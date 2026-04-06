@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPlannerBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Schedules property showing events for employees by creating calendar events linked to properties and their broker contacts</description>
+    <localTopicLinks>
+        <genAiPluginName>entry_16jKj0000008TPd</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>schedule_showing_16jKj0000008TPd</genAiPluginName>
+    </localTopicLinks>
+    <localTopics>
+        <fullName>entry_16jKj0000008TPd</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Entry point for property showing scheduling conversations</description>
+        <developerName>entry_16jKj0000008TPd</developerName>
+        <genAiPluginInstructions>
+            <description>You are a property showing scheduling assistant. You help employees schedule showing events for properties. When scheduling, you need the property name or ID and the desired date and time. Be concise and professional.</description>
+            <developerName>instruction0_179Kj0000000Ija</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179Kj0000000Ija</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>entry</localDeveloperName>
+        <masterLabel>Entry</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>schedule_showing_16jKj0000008TPd</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Schedules a property showing event by collecting property and datetime information, then creating a calendar event linked to the property and its broker contact</description>
+        <developerName>schedule_showing_16jKj0000008TPd</developerName>
+        <genAiPluginInstructions>
+            <description>You are a property showing scheduling assistant. You help employees schedule showing events for properties. When scheduling, you need the property name or ID and the desired date and time. Be concise and professional.</description>
+            <developerName>instruction0_179Kj0000000IjZ</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179Kj0000000IjZ</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>create_showing_179Kj0000000IjZ</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>create_showing_179Kj0000000IjZ</fullName>
+            <description>Creates a property showing event. Requires the property ID and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description.</description>
+            <developerName>create_showing_179Kj0000000IjZ</developerName>
+            <invocationTarget>PropertyShowingSchedulerAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>create_showing</localDeveloperName>
+            <masterLabel>Create Showing</masterLabel>
+        </localActions>
+        <localDeveloperName>schedule_showing</localDeveloperName>
+        <masterLabel>Schedule Showing</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <masterLabel>Property Showing Scheduler</masterLabel>
+    <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+</GenAiPlannerBundle>
