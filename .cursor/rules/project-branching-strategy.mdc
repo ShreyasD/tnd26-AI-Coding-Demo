@@ -18,7 +18,7 @@ alwaysApply: true
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Feature | `feature/short-description` | `feature/null-guard-agent-script` |
+| Feature | `feature/short-description` | `feature/create-showing` |
 | Bug Fix | `bugfix/short-description` | `bugfix/null-vs-empty-success-branch` |
 
 ## Creation Command
