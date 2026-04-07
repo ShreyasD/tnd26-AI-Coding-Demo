@@ -56,14 +56,14 @@ topic schedule_showing:
 
   reasoning:
     instructions: ->
-      if @variables.event_id != "":
-        | The showing has been scheduled successfully.
-        | Confirmation: {!@variables.confirmation_msg}
-        | Ask if they would like to schedule another showing.
-
       if @variables.error_msg != "":
         | The last scheduling attempt failed: {!@variables.error_msg}
         | Ask the employee to correct the information and try again.
+
+      if @variables.error_msg == "" and @variables.event_id != "":
+        | The showing has been scheduled successfully.
+        | Confirmation: {!@variables.confirmation_msg}
+        | Ask if they would like to schedule another showing.
 
       | Help the employee schedule a property showing.
       | Ask for the property they want to show and the desired date and time.

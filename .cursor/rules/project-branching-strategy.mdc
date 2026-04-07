@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Git Branching Strategy
+When starting a new feature or bug fix:
+1.  **Check Status**: Verify the current branch is 'main' or 'develop'.
+2.  **Naming Convention**: 
+    - Features: `feature/short-description`
+    - Bug Fixes: `bugfix/short-description`
+3.  **Creation**: Use the command `git checkout -b <branch-name>` before making any file changes.
+4.  **Verification**: Confirm the branch was created successfully before proceeding with the task.
