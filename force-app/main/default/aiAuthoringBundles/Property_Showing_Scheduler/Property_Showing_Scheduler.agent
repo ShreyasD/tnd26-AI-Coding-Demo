@@ -1,15 +1,21 @@
 config:
   developer_name: "Property_Showing_Scheduler"
-  agent_description: "Schedules property showing events for employees by creating calendar events linked to properties and their broker contacts"
+  agent_description: "Schedules property showing events for employees by searching for properties by name or address and creating calendar events linked to properties and their broker contacts"
   agent_type: "AgentforceEmployeeAgent"
 
 system:
   messages:
-    welcome: "Hello! I can help you schedule a property showing. Which property would you like to schedule a showing for?"
+    welcome: "Hello! I can help you schedule a property showing. Tell me the property name or address and I will look it up for you."
     error: "Sorry, something went wrong while scheduling your showing. Please try again."
-  instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. When scheduling, you need the property name or ID and the desired date and time. Be concise and professional."
+  instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. When scheduling, ask for the property name or address — never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional."
 
 variables:
+  property_id: mutable string = ""
+  property_name: mutable string = ""
+  property_address: mutable string = ""
+  match_count: mutable string = ""
+  match_list: mutable string = ""
+  lookup_error: mutable string = ""
   event_id: mutable string = ""
   confirmation_msg: mutable string = ""
   error_msg: mutable string = ""
@@ -19,22 +25,44 @@ start_agent entry:
   reasoning:
     instructions: |
       Greet the employee and ask which property they want to schedule a showing for.
+      They can provide a property name or street address.
       Route to the schedule_showing topic.
     actions:
       go_schedule: @utils.transition to @topic.schedule_showing
         description: "Navigate to showing scheduler"
 
 topic schedule_showing:
-  description: "Schedules a property showing event by collecting property and datetime information, then creating a calendar event linked to the property and its broker contact"
+  description: "Schedules a property showing event by first looking up the property by name or address, then creating a calendar event linked to the property and its broker contact"
 
   actions:
-    create_showing:
-      description: "Creates a property showing event. Requires the property ID and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description."
+    find_property:
+      description: "Searches for a property by name, address, or city. Returns a single match or a numbered list of matches to choose from."
       inputs:
-        propertyId: string
-          description: "The Salesforce record ID of the Property__c record to schedule the showing for"
+        searchTerm: string
+          description: "The property name, street address, or city to search for"
           is_required: True
           is_user_input: True
+      outputs:
+        propertyId: string
+          description: "The Salesforce record ID of the matched property (set only when exactly one match is found)"
+        propertyName: string
+          description: "The name of the matched property"
+        propertyAddress: string
+          description: "The formatted address of the matched property"
+        matchCount: integer
+          description: "The number of properties found matching the search term"
+        matchList: string
+          description: "A numbered list of matching properties when multiple results are found"
+        errorMessage: string
+          description: "Error message when no properties are found or search term is missing"
+      target: "apex://PropertyLookupAction"
+
+    create_showing:
+      description: "Creates a property showing event. Requires the property ID (resolved from a prior lookup) and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description."
+      inputs:
+        propertyId: string
+          description: "The Salesforce record ID of the Property__c record, resolved from a property lookup"
+          is_required: True
         startDateTime: datetime
           description: "The date and time when the property showing should begin. Must be in the future."
           is_required: True
@@ -65,13 +93,38 @@ topic schedule_showing:
         | Confirmation: {!@variables.confirmation_msg}
         | Ask if they would like to schedule another showing.
 
+      if @variables.lookup_error != "":
+        | The property search returned no results: {!@variables.lookup_error}
+        | Ask the employee to try a different property name or address.
+
+      if @variables.match_list != "":
+        | Multiple properties matched the search. Here are the results:
+        | {!@variables.match_list}
+        | Ask the employee to pick one by name or number, then search again with the specific property name to resolve to a single match.
+
+      if @variables.property_id != "" and @variables.event_id == "":
+        | A property has been identified: {!@variables.property_name} at {!@variables.property_address}.
+        | Now ask the employee for the desired date and time for the showing.
+        | The duration defaults to 30 minutes if not specified.
+        | Use {!@actions.schedule_showing} to create the event.
+
       | Help the employee schedule a property showing.
-      | Ask for the property they want to show and the desired date and time.
-      | The duration defaults to 30 minutes if not specified.
+      | Ask for the property name or address they want to visit.
+      | Never ask for a Salesforce record ID. Use {!@actions.find_property_tool} to look up the property.
     actions:
-      schedule: @actions.create_showing
-        description: "Schedule the property showing"
-        with propertyId = ...
+      find_property_tool: @actions.find_property
+        description: "Search for a property by name or address"
+        with searchTerm = ...
+        set @variables.property_id = @outputs.propertyId
+        set @variables.property_name = @outputs.propertyName
+        set @variables.property_address = @outputs.propertyAddress
+        set @variables.match_count = @outputs.matchCount
+        set @variables.match_list = @outputs.matchList
+        set @variables.lookup_error = @outputs.errorMessage
+
+      schedule_showing: @actions.create_showing
+        description: "Schedule the property showing after the property has been identified"
+        with propertyId = @variables.property_id
         with startDateTime = ...
         set @variables.event_id = @outputs.eventId
         set @variables.confirmation_msg = @outputs.confirmationMessage
