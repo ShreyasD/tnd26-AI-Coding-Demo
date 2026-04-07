@@ -13,7 +13,6 @@ variables:
   event_id: mutable string = ""
   confirmation_msg: mutable string = ""
   error_msg: mutable string = ""
-  schedule_complete: mutable boolean = False
 
 start_agent entry:
   description: "Entry point for property showing scheduling conversations"
@@ -57,7 +56,7 @@ topic schedule_showing:
 
   reasoning:
     instructions: ->
-      if @variables.schedule_complete == True:
+      if @variables.event_id != "":
         | The showing has been scheduled successfully.
         | Confirmation: {!@variables.confirmation_msg}
         | Ask if they would like to schedule another showing.
