@@ -40,7 +40,7 @@ private class PropertyShowingSchedulerActionTest {
         Test.stopTest();
 
         System.assertEquals(1, responses.size(), 'One response expected');
-        System.assertEquals(null, responses[0].errorMessage, 'No error expected');
+        System.assertEquals('', responses[0].errorMessage, 'No error expected');
         System.assertNotEquals(null, responses[0].eventId, 'Event Id should be returned');
 
         Event createdEvent = [
@@ -67,7 +67,7 @@ private class PropertyShowingSchedulerActionTest {
 
         System.assertEquals(1, responses.size());
         System.assertEquals('Property not found for provided propertyId.', responses[0].errorMessage);
-        System.assertEquals(null, responses[0].eventId, 'No event should be created');
+        System.assertEquals('', responses[0].eventId, 'No event should be created');
     }
 
     @IsTest
@@ -92,7 +92,7 @@ private class PropertyShowingSchedulerActionTest {
             );
 
         System.assertEquals('No broker is set on the property.', responses[0].errorMessage);
-        System.assertEquals(null, responses[0].eventId);
+        System.assertEquals('', responses[0].eventId);
     }
 
     @IsTest
@@ -111,7 +111,7 @@ private class PropertyShowingSchedulerActionTest {
             );
 
         System.assertEquals('startDateTime must be in the future.', responses[0].errorMessage);
-        System.assertEquals(null, responses[0].eventId);
+        System.assertEquals('', responses[0].eventId);
     }
 
     @IsTest
@@ -126,7 +126,7 @@ private class PropertyShowingSchedulerActionTest {
             );
 
         System.assertEquals('propertyId is required.', responses[0].errorMessage);
-        System.assertEquals(null, responses[0].eventId);
+        System.assertEquals('', responses[0].eventId);
     }
 
     @IsTest
@@ -154,7 +154,7 @@ private class PropertyShowingSchedulerActionTest {
             );
         Test.stopTest();
 
-        System.assertEquals(null, responses[0].errorMessage);
+        System.assertEquals('', responses[0].errorMessage);
         Event createdEvent = [
             SELECT StartDateTime, EndDateTime FROM Event WHERE Id = :responses[0].eventId LIMIT 1
         ];
@@ -179,7 +179,7 @@ private class PropertyShowingSchedulerActionTest {
             );
         Test.stopTest();
 
-        System.assertEquals(null, responses[0].errorMessage);
+        System.assertEquals('', responses[0].errorMessage);
         Event createdEvent = [
             SELECT Subject FROM Event WHERE Id = :responses[0].eventId LIMIT 1
         ];
@@ -212,6 +212,6 @@ private class PropertyShowingSchedulerActionTest {
             );
 
         System.assertEquals('No broker contact found on the property broker.', responses[0].errorMessage);
-        System.assertEquals(null, responses[0].eventId);
+        System.assertEquals('', responses[0].eventId);
     }
 }
