@@ -1,0 +1,35 @@
+---
+description: Merge upstream changes from main and create a pull request. Apply when the user asks to create a PR.
+alwaysApply: false
+---
+
+# Pull Request Strategy
+
+## MANDATORY — Sync With Main Before Creating a PR
+
+1. **Fetch latest**: `git fetch origin`
+2. **Merge main into current branch**: `git merge origin/main`
+3. **Resolve conflicts** if any arise; never force-push over unresolved conflicts.
+4. **Push the branch**: `git push -u origin HEAD`
+
+## Create the PR
+
+Use `gh pr create` targeting `main`:
+
+```bash
+gh pr create --base main --title "<type>: <summary>" --body "$(cat <<'EOF'
+## Summary
+- <bullet points describing the changes>
+
+## Test Plan
+- [ ] <verification steps>
+EOF
+)"
+```
+
+## Rules
+
+- **Title** follows the same `<type>: <summary>` format as commits (feat, fix, refactor, etc.).
+- **Summary** covers all commits on the branch, not just the latest one.
+- **Never** create a PR with unresolved merge conflicts or failing local builds.
+- **Return the PR URL** so the user can review it.
