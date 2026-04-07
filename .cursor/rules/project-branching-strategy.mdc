@@ -3,10 +3,30 @@ alwaysApply: true
 ---
 
 # Git Branching Strategy
-When starting a new feature or bug fix:
-1.  **Check Status**: Verify the current branch is 'main' or 'develop'.
-2.  **Naming Convention**: 
-    - Features: `feature/short-description`
-    - Bug Fixes: `bugfix/short-description`
-3.  **Creation**: Use the command `git checkout -b <branch-name>` before making any file changes.
-4.  **Verification**: Confirm the branch was created successfully before proceeding with the task.
+
+## MANDATORY — Branch Before Any File Changes
+
+**NEVER edit, create, or delete files while on `main` or `develop`.** If the current branch is `main` or `develop`, you MUST create a new branch BEFORE making any file changes. This is a hard blocker — no exceptions.
+
+## Workflow
+
+1. **Check current branch**: Run `git branch --show-current` as your FIRST action when a task involves file changes.
+2. **If on `main` or `develop`**: Create a new branch immediately. Do NOT proceed with any edits until the branch exists.
+3. **If already on a feature/bugfix branch**: Proceed with the task.
+
+## Branch Naming Convention
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature | `feature/short-description` | `feature/null-guard-agent-script` |
+| Bug Fix | `bugfix/short-description` | `bugfix/null-vs-empty-success-branch` |
+
+## Creation Command
+
+```bash
+git checkout -b <branch-name>
+```
+
+## Verification
+
+After creating the branch, confirm with `git branch --show-current` before making any file changes.
