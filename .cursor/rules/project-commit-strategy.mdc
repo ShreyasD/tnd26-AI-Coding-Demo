@@ -1,0 +1,45 @@
+---
+description: Commit files in logical chunks with concise, descriptive messages. Apply when the user asks to commit changes.
+alwaysApply: false
+---
+
+# Commit Strategy
+
+## MANDATORY — Logical Chunking
+
+**Never commit all changes in a single bulk commit.** Group related files into logical units before committing.
+
+## Chunking Rules
+
+1. **One concern per commit**: A commit should represent a single logical change (e.g., new class + its test, a config change, a bug fix).
+2. **Stage deliberately**: Use `git add <file>...` to stage only the files that belong together. Never blindly `git add .` or `git add -A` unless every changed file is part of the same logical unit.
+3. **Review before committing**: Run `git status` and `git diff --staged` to verify the staged set makes sense as a cohesive change.
+
+## Commit Message Format
+
+```
+<type>: <concise summary in imperative mood>
+```
+
+| Type | Use when |
+|------|----------|
+| `feat` | Adding new functionality |
+| `fix` | Correcting a bug |
+| `refactor` | Restructuring without behavior change |
+| `test` | Adding or updating tests |
+| `docs` | Documentation-only changes |
+| `chore` | Build, config, or tooling changes |
+
+### Examples
+
+```
+feat: add Property__c lookup field to Showing__c object
+fix: handle null vs empty string in success branch
+test: add unit tests for EmployeeSchedulingService
+docs: document agent topic routing decisions
+chore: update package.json dependencies
+```
+
+## Ordering
+
+Commit foundational changes first (e.g., objects/fields before classes that reference them, classes before tests that cover them).
