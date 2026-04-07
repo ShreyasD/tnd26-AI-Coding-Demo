@@ -18,13 +18,13 @@ global with sharing class PropertyShowingSchedulerAction {
 
     global class Response {
         @InvocableVariable
-        public String eventId;
+        public String eventId = '';
 
         @InvocableVariable
-        public String confirmationMessage;
+        public String confirmationMessage = '';
 
         @InvocableVariable
-        public String errorMessage;
+        public String errorMessage = '';
     }
 
     @InvocableMethod(label='Create Property Event')
