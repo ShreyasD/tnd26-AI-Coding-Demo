@@ -14,6 +14,9 @@ global with sharing class PropertyShowingSchedulerAction {
 
         @InvocableVariable
         public String eventDescription;
+
+        @InvocableVariable
+        public String leadId;
     }
 
     global class Response {
@@ -131,15 +134,30 @@ global with sharing class PropertyShowingSchedulerAction {
 
         if (!eventsToInsert.isEmpty()) {
             Database.SaveResult[] saveResults = Database.insert(eventsToInsert, false);
+            List<EventRelation> leadRelations = new List<EventRelation>();
             for (Integer pos = 0; pos < saveResults.size(); pos++) {
                 Integer reqIdx = eventRequestIndexes[pos];
                 Response resp = responses[reqIdx];
                 if (saveResults[pos].isSuccess()) {
                     resp.eventId = String.valueOf(saveResults[pos].getId());
-                    resp.confirmationMessage = 'Created event ' + resp.eventId + '.';
+                    String baseUrl = URL.getOrgDomainURL().toExternalForm();
+                    resp.confirmationMessage = 'Property showing scheduled! '
+                        + '[View Event](' + baseUrl + '/lightning/r/Event/' + resp.eventId + '/view)';
+
+                    Id parsedLeadId = parseId(requests[reqIdx].leadId);
+                    if (parsedLeadId != null) {
+                        leadRelations.add(new EventRelation(
+                            EventId = saveResults[pos].getId(),
+                            RelationId = parsedLeadId,
+                            IsInvitee = true
+                        ));
+                    }
                 } else {
                     resp.errorMessage = saveResults[pos].getErrors()[0].getMessage();
                 }
+            }
+            if (!leadRelations.isEmpty()) {
+                Database.insert(leadRelations, false);
             }
         }
 
