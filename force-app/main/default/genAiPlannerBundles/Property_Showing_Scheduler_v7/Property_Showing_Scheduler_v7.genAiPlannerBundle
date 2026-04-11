@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPlannerBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Schedules property showing events for employees by searching for properties by name or address, or by looking up a lead and auto-resolving their assigned property, then creating calendar events linked to properties and their broker contacts</description>
+    <localTopicLinks>
+        <genAiPluginName>entry_16jKj0000008TQ2</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>schedule_showing_16jKj0000008TQ2</genAiPluginName>
+    </localTopicLinks>
+    <localTopicLinks>
+        <genAiPluginName>schedule_showing_for_lead_16jKj0000008TQ2</genAiPluginName>
+    </localTopicLinks>
+    <localTopics>
+        <fullName>entry_16jKj0000008TQ2</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Entry point for property showing scheduling conversations</description>
+        <developerName>entry_16jKj0000008TQ2</developerName>
+        <genAiPluginInstructions>
+            <description>You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead&apos;s assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional.</description>
+            <developerName>instruction0_179Kj0000000Iky</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179Kj0000000Iky</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localDeveloperName>entry</localDeveloperName>
+        <masterLabel>Entry</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>schedule_showing_for_lead_16jKj0000008TQ2</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Schedules a property showing for a lead by looking up the lead by name, auto-resolving their assigned property, and creating a calendar event linked to the property and its broker contact</description>
+        <developerName>schedule_showing_for_lead_16jKj0000008TQ2</developerName>
+        <genAiPluginInstructions>
+            <description>You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead&apos;s assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional.</description>
+            <developerName>instruction0_179Kj0000000Ikx</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179Kj0000000Ikx</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>create_showing_for_lead_179Kj0000000Ikx</functionName>
+        </localActionLinks>
+        <localActionLinks>
+            <functionName>find_lead_179Kj0000000Ikx</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>find_lead_179Kj0000000Ikx</fullName>
+            <description>Searches for a lead by name. Returns the lead details and their assigned property information. If the lead has a property, the property ID, name, and address are auto-resolved.</description>
+            <developerName>find_lead_179Kj0000000Ikx</developerName>
+            <invocationTarget>LeadLookupAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>find_lead</localDeveloperName>
+            <masterLabel>Find Lead</masterLabel>
+        </localActions>
+        <localActions>
+            <fullName>create_showing_for_lead_179Kj0000000Ikx</fullName>
+            <description>Creates a property showing event for a lead. Requires the property ID (auto-resolved from the lead lookup) and a future start date/time.</description>
+            <developerName>create_showing_for_lead_179Kj0000000Ikx</developerName>
+            <invocationTarget>PropertyShowingSchedulerAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>create_showing_for_lead</localDeveloperName>
+            <masterLabel>Create Showing For Lead</masterLabel>
+        </localActions>
+        <localDeveloperName>schedule_showing_for_lead</localDeveloperName>
+        <masterLabel>Schedule Showing For Lead</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <localTopics>
+        <fullName>schedule_showing_16jKj0000008TQ2</fullName>
+        <canEscalate>false</canEscalate>
+        <description>Schedules a property showing event by first looking up the property by name or address, then creating a calendar event linked to the property and its broker contact</description>
+        <developerName>schedule_showing_16jKj0000008TQ2</developerName>
+        <genAiPluginInstructions>
+            <description>You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead&apos;s assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional.</description>
+            <developerName>instruction0_179Kj0000000Ikz</developerName>
+            <language>en_US</language>
+            <masterLabel>instruction0_179Kj0000000Ikz</masterLabel>
+            <sortOrder>1</sortOrder>
+        </genAiPluginInstructions>
+        <language>en_US</language>
+        <localActionLinks>
+            <functionName>find_property_179Kj0000000Ikz</functionName>
+        </localActionLinks>
+        <localActionLinks>
+            <functionName>create_showing_179Kj0000000Ikz</functionName>
+        </localActionLinks>
+        <localActions>
+            <fullName>find_property_179Kj0000000Ikz</fullName>
+            <description>Searches for a property by name, address, or city. Returns a single match or a numbered list of matches to choose from.</description>
+            <developerName>find_property_179Kj0000000Ikz</developerName>
+            <invocationTarget>PropertyLookupAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>find_property</localDeveloperName>
+            <masterLabel>Find Property</masterLabel>
+        </localActions>
+        <localActions>
+            <fullName>create_showing_179Kj0000000Ikz</fullName>
+            <description>Creates a property showing event. Requires the property ID (resolved from a prior lookup) and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description.</description>
+            <developerName>create_showing_179Kj0000000Ikz</developerName>
+            <invocationTarget>PropertyShowingSchedulerAction</invocationTarget>
+            <invocationTargetType>apex</invocationTargetType>
+            <isConfirmationRequired>false</isConfirmationRequired>
+            <isIncludeInProgressIndicator>false</isIncludeInProgressIndicator>
+            <localDeveloperName>create_showing</localDeveloperName>
+            <masterLabel>Create Showing</masterLabel>
+        </localActions>
+        <localDeveloperName>schedule_showing</localDeveloperName>
+        <masterLabel>Schedule Showing</masterLabel>
+        <pluginType>Topic</pluginType>
+    </localTopics>
+    <masterLabel>Property Showing Scheduler</masterLabel>
+    <plannerType>Atlas__ConcurrentMultiAgentOrchestration</plannerType>
+</GenAiPlannerBundle>
