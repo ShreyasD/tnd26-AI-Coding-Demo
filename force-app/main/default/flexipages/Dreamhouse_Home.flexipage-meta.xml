@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>Dreamhouse Home</masterLabel>
+    <type>AppPage</type>
+    <template>
+        <name>flexipage:appHomeTemplateHeaderAndThreeRegions</name>
+    </template>
+    <flexiPageRegions>
+        <name>header</name>
+        <type>Region</type>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <name>left</name>
+        <type>Region</type>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <name>main</name>
+        <type>Region</type>
+        <itemInstances>
+            <componentInstance>
+                <componentName>c:leadHouseCapture</componentName>
+                <componentInstanceProperties>
+                    <name>title</name>
+                    <value>Lead Capture: Find Houses</value>
+                </componentInstanceProperties>
+            </componentInstance>
+        </itemInstances>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <name>right</name>
+        <type>Region</type>
+    </flexiPageRegions>
+    <description>Dreamhouse Home App Page with Lead House Capture LWC</description>
+</FlexiPage>
