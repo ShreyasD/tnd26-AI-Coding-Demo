@@ -1,0 +1,171 @@
+<!-- Lead House Capture LWC
+Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (one per selected property)
+-->
+<template>
+    <lightning-card title="Lead Capture: Find Houses" icon-name="custom:custom63">
+        <div class="slds-p-around_medium slds-grid slds-gutters">
+            <!-- Filters / Questions -->
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
+                <div class="slds-text-heading_small slds-m-bottom_small">Tell us what you're looking for</div>
+
+                <lightning-input
+                    type="text"
+                    label="Which city or state are you looking?"
+                    value={cityOrState}
+                    onchange={handleCityStateChange}
+                ></lightning-input>
+
+                <lightning-input
+                    class="slds-m-top_small"
+                    type="number"
+                    min="0"
+                    label="How many bedrooms are you looking for?"
+                    value={minBedrooms}
+                    onchange={handleBedroomsChange}
+                ></lightning-input>
+
+                <lightning-combobox
+                    class="slds-m-top_small"
+                    label="What style of house are you looking for?"
+                    placeholder="Any"
+                    value={selectedStyle}
+                    options={styleOptions}
+                    onchange={handleStyleChange}
+                ></lightning-combobox>
+
+                <div class="slds-grid slds-gutters slds-m-top_small">
+                    <div class="slds-col">
+                        <lightning-input
+                            type="number"
+                            label="Min Price"
+                            value={minPrice}
+                            formatter="currency"
+                            step="1000"
+                            onchange={handleMinPriceChange}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col">
+                        <lightning-input
+                            type="number"
+                            label="Max Price"
+                            value={maxPrice}
+                            formatter="currency"
+                            step="1000"
+                            onchange={handleMaxPriceChange}
+                        ></lightning-input>
+                    </div>
+                </div>
+
+                <div class="slds-m-top_small">
+                    <lightning-button
+                        variant="brand"
+                        label="Search"
+                        title="Search"
+                        onclick={handleSearch}
+                    ></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_x-small"
+                        variant="neutral"
+                        label="Clear"
+                        title="Clear"
+                        onclick={handleClear}
+                    ></lightning-button>
+                </div>
+
+                <template if:true={selectedCount}>
+                    <div class="slds-m-top_small slds-text-body_small">
+                        Selected: {selectedCount} / 3
+                    </div>
+                </template>
+            </div>
+
+            <!-- Results -->
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_2-of-3">
+                <div class="slds-text-heading_small slds-m-bottom_small">
+                    Suggested Houses
+                </div>
+
+                <template if:true={isSearching}>
+                    <div class="slds-p-vertical_large slds-align_absolute-center">
+                        <lightning-spinner alternative-text="Searching" size="small"></lightning-spinner>
+                    </div>
+                </template>
+
+                <template if:true={properties.length}>
+                    <div class="slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={properties} for:item="prop">
+                            <div key={prop.id} class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <article class="slds-card slds-p-around_small property-card">
+                                    <div class="slds-grid slds-gutters_small slds-wrap">
+                                        <div class="slds-col slds-size_1-of-4">
+                                            <template if:true={prop.thumbnailUrl}>
+                                                <img src={prop.thumbnailUrl} alt={prop.name} class="thumb" />
+                                            </template>
+                                            <template if:false={prop.thumbnailUrl}>
+                                                <div class="thumb thumb-placeholder slds-align_absolute-center slds-text-color_weak">No Image</div>
+                                            </template>
+                                        </div>
+                                        <div class="slds-col slds-size_3-of-4">
+                                            <div class="slds-text-title_bold">{prop.name}</div>
+                                            <div class="slds-text-body_small slds-m-top_xx-small">
+                                                <template if:true={prop.price}>
+                                                    <span>{prop.price}</span>
+                                                </template>
+                                                <template if:true={prop.beds}>
+                                                    <span class="slds-m-left_small">{prop.beds} bd</span>
+                                                </template>
+                                                <template if:true={prop.style}>
+                                                    <span class="slds-m-left_small">{prop.style}</span>
+                                                </template>
+                                            </div>
+                                            <template if:true={prop.city}>
+                                                <div class="slds-text-body_small slds-m-top_xx-small">
+                                                    <template if:true={prop.state}>
+                                                        <span>{prop.city}, {prop.state}</span>
+                                                    </template>
+                                                    <template if:false={prop.state}>
+                                                        <span>{prop.city}</span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template if:true={prop.displayTags}>
+                                                <div class="slds-m-top_xx-small slds-text-color_weak slds-text-body_small">
+                                                    <span class="slds-m-right_xx-small slds-text-color_weak">Tags:</span>
+                                                    <span>{prop.displayTags}</span>
+                                                </div>
+                                            </template>
+                                            <div class="slds-m-top_small">
+                                                <lightning-button
+                                                    data-id={prop.id}
+                                                    label="Select"
+                                                    onclick={toggleSelect}
+                                                    disabled={prop.selectDisabled}
+                                                ></lightning-button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template if:true={hasSearched}>
+                    <template if:false={properties.length}>
+                        <div class="slds-text-color_weak slds-m-top_small">No properties matched your criteria.</div>
+                    </template>
+                </template>
+
+                <div class="slds-m-top_medium">
+                    <lightning-button
+                        variant="brand"
+                        label="Submit Leads"
+                        title="Submit Leads"
+                        onclick={handleSubmit}
+                        disabled={isSubmitDisabled}
+                    ></lightning-button>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>
