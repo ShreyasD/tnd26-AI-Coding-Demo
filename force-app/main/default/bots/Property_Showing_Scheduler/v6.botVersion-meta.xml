@@ -86,34 +86,18 @@
     </conversationVariables>
     <conversationVariables>
         <dataType>Text</dataType>
-        <description>Event Id</description>
-        <developerName>event_id</developerName>
-        <includeInPrompt>false</includeInPrompt>
-        <label>Event Id</label>
-        <visibility>Internal</visibility>
-    </conversationVariables>
-    <conversationVariables>
-        <dataType>Text</dataType>
-        <description>Match Count</description>
-        <developerName>match_count</developerName>
-        <includeInPrompt>false</includeInPrompt>
-        <label>Match Count</label>
-        <visibility>Internal</visibility>
-    </conversationVariables>
-    <conversationVariables>
-        <dataType>Text</dataType>
-        <description>Property Address</description>
-        <developerName>property_address</developerName>
-        <includeInPrompt>false</includeInPrompt>
-        <label>Property Address</label>
-        <visibility>Internal</visibility>
-    </conversationVariables>
-    <conversationVariables>
-        <dataType>Text</dataType>
         <description>Error Msg</description>
         <developerName>error_msg</developerName>
         <includeInPrompt>false</includeInPrompt>
         <label>Error Msg</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Event Id</description>
+        <developerName>event_id</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Event Id</label>
         <visibility>Internal</visibility>
     </conversationVariables>
     <conversationVariables>
@@ -126,10 +110,26 @@
     </conversationVariables>
     <conversationVariables>
         <dataType>Text</dataType>
+        <description>Match Count</description>
+        <developerName>match_count</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Match Count</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
         <description>Match List</description>
         <developerName>match_list</developerName>
         <includeInPrompt>false</includeInPrompt>
         <label>Match List</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Property Address</description>
+        <developerName>property_address</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Property Address</label>
         <visibility>Internal</visibility>
     </conversationVariables>
     <conversationVariables>
