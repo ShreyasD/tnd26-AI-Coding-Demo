@@ -1,0 +1,42 @@
+{
+  "required" : [ "propertyId", "startDateTime" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "durationMinutes" : {
+      "title" : "Duration Minutes",
+      "description" : "Duration of the showing in minutes. Defaults to 30 if not provided.",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "eventDescription" : {
+      "title" : "Event Description",
+      "description" : "Optional description or notes for the showing event",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "propertyId" : {
+      "title" : "Property Id",
+      "description" : "The Salesforce record ID of the Property__c record, auto-resolved from the lead's assigned property",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "startDateTime" : {
+      "title" : "Start Date Time",
+      "description" : "The date and time when the property showing should begin. Must be in the future.",
+      "lightning:type" : "lightning__dateTimeStringType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "subject" : {
+      "title" : "Subject",
+      "description" : "Custom subject line for the event. Defaults to Property Showing if not provided.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}
