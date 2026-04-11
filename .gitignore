@@ -3,3 +3,8 @@ force-app/main/default/.DS_Store
 
 ##sfdx
 .sfdx/
+
+##agentforce rules
+.a4drules/
+force-app/main/default/lwc/jsconfig.json
+.sf/config.json
