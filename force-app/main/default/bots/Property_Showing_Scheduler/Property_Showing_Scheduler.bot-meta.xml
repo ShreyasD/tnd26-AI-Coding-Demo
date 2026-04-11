@@ -7,7 +7,7 @@
         <name>Property_Showing_Scheduler</name>
     </botMlDomain>
     <botSource>None</botSource>
-    <description>Schedules property showing events for employees by searching for properties by name or address and creating calendar events linked to properties and their broker contacts</description>
+    <description>Schedules property showing events for employees by searching for properties by name or address, or by looking up a lead and auto-resolving their assigned property, then creating calendar events linked to properties and their broker contacts</description>
     <label>Property Showing Scheduler</label>
     <logPrivateConversationData>false</logPrivateConversationData>
     <richContentEnabled>true</richContentEnabled>

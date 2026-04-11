@@ -187,6 +187,64 @@ private class PropertyShowingSchedulerActionTest {
     }
 
     @IsTest
+    static void addsLeadAsEventRelationWhenLeadIdProvided() {
+        Contact c = new Contact(LastName = 'Lead Relation Contact');
+        insert c;
+        Property__c propertyRecord = makePropertyWithBrokerContact(c);
+
+        Lead ld = new Lead(LastName = 'Showing Lead', Company = 'Test Co', Property__c = propertyRecord.Id);
+        insert ld;
+
+        PropertyShowingSchedulerAction.Request req = new PropertyShowingSchedulerAction.Request();
+        req.propertyId = propertyRecord.Id;
+        req.startDateTime = System.now().addDays(1);
+        req.leadId = ld.Id;
+
+        Test.startTest();
+        List<PropertyShowingSchedulerAction.Response> responses =
+            PropertyShowingSchedulerAction.createPropertyEvent(
+                new List<PropertyShowingSchedulerAction.Request>{ req }
+            );
+        Test.stopTest();
+
+        System.assertEquals('', responses[0].errorMessage);
+        System.assertNotEquals('', responses[0].eventId);
+
+        List<EventRelation> relations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND RelationId = :ld.Id
+        ];
+        System.assertEquals(1, relations.size(), 'Lead should be added as an event relation');
+    }
+
+    @IsTest
+    static void skipsLeadRelationWhenLeadIdIsNull() {
+        Contact c = new Contact(LastName = 'No Lead Contact');
+        insert c;
+        Property__c propertyRecord = makePropertyWithBrokerContact(c);
+
+        PropertyShowingSchedulerAction.Request req = new PropertyShowingSchedulerAction.Request();
+        req.propertyId = propertyRecord.Id;
+        req.startDateTime = System.now().addDays(1);
+
+        Test.startTest();
+        List<PropertyShowingSchedulerAction.Response> responses =
+            PropertyShowingSchedulerAction.createPropertyEvent(
+                new List<PropertyShowingSchedulerAction.Request>{ req }
+            );
+        Test.stopTest();
+
+        System.assertEquals('', responses[0].errorMessage);
+        System.assertNotEquals('', responses[0].eventId);
+
+        List<EventRelation> leadRelations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND Relation.Type = 'Lead'
+        ];
+        System.assertEquals(0, leadRelations.size(), 'No lead relation when leadId is null');
+    }
+
+    @IsTest
     static void returnsErrorWhenBrokerHasNoContact() {
         Broker__c broker = new Broker__c(Name = 'No Contact Broker');
         insert broker;
