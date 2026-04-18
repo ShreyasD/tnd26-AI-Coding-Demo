@@ -106,13 +106,34 @@ public with sharing class LeadHouseCaptureController {
     }
 
     @AuraEnabled
-    public static List<CreateLeadResult> createLeadsForProperties(List<Id> propertyIds, String cityOrState, Integer bedrooms, String style, Decimal minPrice, Decimal maxPrice) {
+    public static List<CreateLeadResult> createLeadsForProperties(
+        List<Id> propertyIds, 
+        String firstName, 
+        String lastName, 
+        String email, 
+        String phone, 
+        String cityOrState, 
+        Integer bedrooms, 
+        String style, 
+        Decimal minPrice, 
+        Decimal maxPrice
+    ) {
         if (propertyIds == null || propertyIds.isEmpty()) {
             throw new AuraHandledException('No properties selected.');
         }
         // Enforce max 3
         if (propertyIds.size() > 3) {
             throw new AuraHandledException('You can only submit up to 3 properties at a time.');
+        }
+        
+        // Validate required contact fields
+        if (String.isBlank(firstName) || String.isBlank(lastName)) {
+            throw new AuraHandledException('First Name and Last Name are required.');
+        }
+        
+        // Validate at least one contact method
+        if (String.isBlank(email) && String.isBlank(phone)) {
+            throw new AuraHandledException('Please provide at least one contact method: Email or Phone.');
         }
 
         Map<Id, Property__c> props = new Map<Id, Property__c>([
@@ -126,11 +147,13 @@ public with sharing class LeadHouseCaptureController {
             if (p == null) continue;
 
             Lead l = new Lead();
-            l.LastName = 'House Inquiry';
+            l.FirstName = firstName.trim();
+            l.LastName = lastName.trim();
+            l.Email = String.isBlank(email) ? null : email.trim();
+            l.Phone = String.isBlank(phone) ? null : phone.trim();
             l.Company = 'Dreamhouse Prospect';
-            // Optional helpful fields
             l.Status = 'Open - Not Contacted';
-            l.Description = buildDescription(p, cityOrState, bedrooms, style, minPrice, maxPrice);
+            l.Description = buildDescription(p, firstName, lastName, email, phone, cityOrState, bedrooms, style, minPrice, maxPrice);
             toInsert.add(l);
         }
 
@@ -161,12 +184,21 @@ public with sharing class LeadHouseCaptureController {
         return results;
     }
 
-    private static String buildDescription(Property__c p, String cityOrState, Integer bedrooms, String style, Decimal minPrice, Decimal maxPrice) {
+    private static String buildDescription(Property__c p, String firstName, String lastName, String email, String phone, String cityOrState, Integer bedrooms, String style, Decimal minPrice, Decimal maxPrice) {
         List<String> lines = new List<String>();
         lines.add('Lead generated from Dreamhouse Home LWC.');
+        lines.add('Contact: ' + firstName + ' ' + lastName);
+        if (!String.isBlank(email)) {
+            lines.add('Email: ' + email);
+        }
+        if (!String.isBlank(phone)) {
+            lines.add('Phone: ' + phone);
+        }
+        lines.add('');
         lines.add('Selected Property: ' + p.Name + ' (' + String.valueOf(p.Id) + ')');
         lines.add('Property Details: Price=' + String.valueOf(p.Price__c) + ', Beds=' + String.valueOf(p.Beds__c) + ', ' +
                   'City=' + p.City__c + ', State=' + p.State__c);
+        lines.add('');
         lines.add('Buyer Preferences:');
         lines.add('- City/State: ' + (String.isBlank(cityOrState) ? 'Any' : cityOrState));
         lines.add('- Bedrooms: ' + (bedrooms == null ? 'Any' : String.valueOf(bedrooms) + '+'));
