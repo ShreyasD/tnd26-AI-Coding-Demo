@@ -1,12 +1,87 @@
 <!-- Lead House Capture LWC
-Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (one per selected property)
+Multi-screen form: Screen 1 = Contact Info, Screen 2 = Property Search
 -->
 <template>
     <lightning-card title="Lead Capture: Find Houses" icon-name="custom:custom63">
+        <!-- Progress Indicator -->
+        <div class="slds-p-around_small slds-text-align_center slds-border_bottom">
+            <span class="slds-text-body_small slds-text-color_weak">
+                Step {currentStepNumber} of 2
+            </span>
+        </div>
+
+        <!-- Screen 1: Contact Information -->
+        <template if:true={isContactScreen}>
+            <div class="slds-p-around_medium">
+                <div class="slds-text-heading_medium slds-m-bottom_medium">Contact Information</div>
+                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium">
+                    Please provide your contact details. Either Email or Phone is required.
+                </p>
+
+                <!-- Error Banner -->
+                <template if:true={contactValidationError}>
+                    <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" role="alert">
+                        <span class="slds-assistive-text">error</span>
+                        <span class="slds-icon_container slds-icon-utility-error slds-m-right_x-small">
+                            <lightning-icon icon-name="utility:error" alternative-text="error" size="x-small" variant="inverse"></lightning-icon>
+                        </span>
+                        <h2>{contactValidationError}</h2>
+                    </div>
+                </template>
+
+                <div class="slds-form" role="list">
+                    <lightning-input
+                        label="First Name"
+                        value={firstName}
+                        onchange={handleFirstNameChange}
+                        required
+                        class="slds-m-bottom_small"
+                    ></lightning-input>
+
+                    <lightning-input
+                        label="Last Name"
+                        value={lastName}
+                        onchange={handleLastNameChange}
+                        required
+                        class="slds-m-bottom_small"
+                    ></lightning-input>
+
+                    <lightning-input
+                        type="email"
+                        label="Email"
+                        value={email}
+                        onchange={handleEmailChange}
+                        class="slds-m-bottom_small"
+                        field-level-help="Please provide at least one contact method (Email or Phone)"
+                    ></lightning-input>
+
+                    <lightning-input
+                        type="tel"
+                        label="Phone"
+                        value={phone}
+                        onchange={handlePhoneChange}
+                        class="slds-m-bottom_medium"
+                        field-level-help="Please provide at least one contact method (Email or Phone)"
+                    ></lightning-input>
+
+                    <div class="slds-m-top_medium">
+                        <lightning-button
+                            variant="brand"
+                            label="Next"
+                            title="Next"
+                            onclick={handleNext}
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Screen 2: Property Preferences and Search -->
+        <template if:true={isPropertyScreen}>
         <div class="slds-p-around_medium slds-grid slds-gutters">
-            <!-- Filters / Questions -->
+            <!-- Property Search Filters -->
             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3">
-                <div class="slds-text-heading_small slds-m-bottom_small">Tell us what you're looking for</div>
+                <div class="slds-text-heading_small slds-m-bottom_small">Property Preferences</div>
 
                 <lightning-input
                     type="text"
@@ -62,13 +137,6 @@ Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (
                         label="Search"
                         title="Search"
                         onclick={handleSearch}
-                    ></lightning-button>
-                    <lightning-button
-                        class="slds-m-left_x-small"
-                        variant="neutral"
-                        label="Clear"
-                        title="Clear"
-                        onclick={handleClear}
                     ></lightning-button>
                 </div>
 
@@ -135,12 +203,24 @@ Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (
                                                 </div>
                                             </template>
                                             <div class="slds-m-top_small">
-                                                <lightning-button
-                                                    data-id={prop.id}
-                                                    label="Select"
-                                                    onclick={toggleSelect}
-                                                    disabled={prop.selectDisabled}
-                                                ></lightning-button>
+                                                <template if:true={prop.selected}>
+                                                    <lightning-button
+                                                        data-id={prop.id}
+                                                        label="Selected"
+                                                        variant="success"
+                                                        icon-name="utility:check"
+                                                        onclick={toggleSelect}
+                                                    ></lightning-button>
+                                                </template>
+                                                <template if:false={prop.selected}>
+                                                    <lightning-button
+                                                        data-id={prop.id}
+                                                        label="Select"
+                                                        variant="brand"
+                                                        onclick={toggleSelect}
+                                                        disabled={prop.selectDisabled}
+                                                    ></lightning-button>
+                                                </template>
                                             </div>
                                         </div>
                                     </div>
@@ -152,11 +232,24 @@ Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (
 
                 <template if:true={hasSearched}>
                     <template if:false={properties.length}>
-                        <div class="slds-text-color_weak slds-m-top_small">No properties matched your criteria.</div>
+                        <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-top_medium" role="alert">
+                            <span class="slds-assistive-text">warning</span>
+                            <span class="slds-icon_container slds-icon-utility-warning slds-m-right_x-small">
+                                <lightning-icon icon-name="utility:warning" alternative-text="warning" size="x-small"></lightning-icon>
+                            </span>
+                            <h2>No houses match your search criteria. Please try adjusting your filters.</h2>
+                        </div>
                     </template>
                 </template>
 
                 <div class="slds-m-top_medium">
+                    <lightning-button
+                        variant="neutral"
+                        label="Back"
+                        title="Back"
+                        onclick={handleBack}
+                        class="slds-m-right_x-small"
+                    ></lightning-button>
                     <lightning-button
                         variant="brand"
                         label="Submit Leads"
@@ -167,5 +260,6 @@ Asks 4 questions, suggests houses, lets user select up to 3, and submits Leads (
                 </div>
             </div>
         </div>
+        </template>
     </lightning-card>
 </template>

@@ -7,7 +7,17 @@ import createLeadsForProperties from '@salesforce/apex/LeadHouseCaptureControlle
 import getDistinctStylesFromTags from '@salesforce/apex/LeadHouseCaptureController.getDistinctStylesFromTags';
 
 export default class LeadHouseCapture extends LightningElement {
-    // Form inputs
+    // Screen management
+    @track currentScreen = 'contact'; // 'contact' or 'property'
+
+    // Contact information (Screen 1)
+    firstName = '';
+    lastName = '';
+    email = '';
+    phone = '';
+    contactValidationError = '';
+
+    // Property search inputs (Screen 2)
     cityOrState = '';
     minBedrooms = 0;
     selectedStyle = '';
@@ -22,6 +32,19 @@ export default class LeadHouseCapture extends LightningElement {
     @track selectedMap = new Map(); // propertyId -> true
     isSearching = false;
     hasSearched = false;
+
+    // Screen computed properties
+    get isContactScreen() {
+        return this.currentScreen === 'contact';
+    }
+
+    get isPropertyScreen() {
+        return this.currentScreen === 'property';
+    }
+
+    get currentStepNumber() {
+        return this.currentScreen === 'contact' ? 1 : 2;
+    }
 
     connectedCallback() {
         this.loadStyleOptions();
@@ -44,7 +67,76 @@ export default class LeadHouseCapture extends LightningElement {
         }
     }
 
-    // Handlers for inputs
+    // Contact form handlers (Screen 1)
+    handleFirstNameChange = (e) => {
+        this.firstName = e.target.value;
+        this.contactValidationError = '';
+    };
+
+    handleLastNameChange = (e) => {
+        this.lastName = e.target.value;
+        this.contactValidationError = '';
+    };
+
+    handleEmailChange = (e) => {
+        this.email = e.target.value;
+        this.contactValidationError = '';
+    };
+
+    handlePhoneChange = (e) => {
+        this.phone = e.target.value;
+        this.contactValidationError = '';
+    };
+
+    // Contact validation
+    validateContactInfo() {
+        // Clear previous error
+        this.contactValidationError = '';
+
+        // Check required fields
+        if (!this.firstName || !this.firstName.trim()) {
+            this.contactValidationError = 'First Name is required.';
+            return false;
+        }
+
+        if (!this.lastName || !this.lastName.trim()) {
+            this.contactValidationError = 'Last Name is required.';
+            return false;
+        }
+
+        // Check at least one contact method
+        const hasEmail = this.email && this.email.trim();
+        const hasPhone = this.phone && this.phone.trim();
+
+        if (!hasEmail && !hasPhone) {
+            this.contactValidationError = 'Please provide at least one contact method: Email or Phone.';
+            return false;
+        }
+
+        // Validate email format if provided
+        if (hasEmail) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(this.email.trim())) {
+                this.contactValidationError = 'Please enter a valid email address.';
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Navigation handlers
+    handleNext = () => {
+        if (this.validateContactInfo()) {
+            this.currentScreen = 'property';
+        }
+    };
+
+    handleBack = () => {
+        this.currentScreen = 'contact';
+    };
+
+    // Property search handlers (Screen 2)
     handleCityStateChange = (e) => {
         this.cityOrState = e.target.value;
     };
@@ -125,6 +217,21 @@ export default class LeadHouseCapture extends LightningElement {
         this.hasSearched = false;
     };
 
+    resetForm() {
+        // Reset contact info
+        this.firstName = '';
+        this.lastName = '';
+        this.email = '';
+        this.phone = '';
+        this.contactValidationError = '';
+        
+        // Reset property search
+        this.handleClear();
+        
+        // Return to first screen
+        this.currentScreen = 'contact';
+    }
+
     // Computed getter to control Submit button disabled state (replaces template expression)
     get isSubmitDisabled() {
         return this.selectedCount === 0;
@@ -166,7 +273,7 @@ export default class LeadHouseCapture extends LightningElement {
         return this.selectedMap.size;
     }
 
-    // Submit
+    // Submit leads with contact information
     async handleSubmit() {
         if (this.selectedCount === 0) {
             this.toast('No selection', 'Please select at least one property to submit.', 'info');
@@ -178,6 +285,10 @@ export default class LeadHouseCapture extends LightningElement {
         try {
             const res = await createLeadsForProperties({
                 propertyIds: ids,
+                firstName: (this.firstName || '').trim(),
+                lastName: (this.lastName || '').trim(),
+                email: (this.email || '').trim(),
+                phone: (this.phone || '').trim(),
                 cityOrState: (this.cityOrState || '').trim(),
                 bedrooms: this.minBedrooms,
                 style: this.selectedStyle || '',
@@ -188,6 +299,8 @@ export default class LeadHouseCapture extends LightningElement {
             const successes = (res || []).filter((r) => r.success);
             if (successes.length > 0) {
                 this.toast('Leads created', `Successfully created ${successes.length} lead(s).`, 'success');
+                // Reset form after successful submission
+                this.resetForm();
             }
             const failures = (res || []).filter((r) => !r.success);
             if (failures.length > 0) {
