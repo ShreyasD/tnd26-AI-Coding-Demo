@@ -1,12 +1,13 @@
 import { LightningElement, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { NavigationMixin } from 'lightning/navigation';
 
 // Apex methods
 import searchProperties from '@salesforce/apex/LeadHouseCaptureController.searchProperties';
 import createLeadsForProperties from '@salesforce/apex/LeadHouseCaptureController.createLeadsForProperties';
 import getDistinctStylesFromTags from '@salesforce/apex/LeadHouseCaptureController.getDistinctStylesFromTags';
 
-export default class LeadHouseCapture extends LightningElement {
+export default class LeadHouseCapture extends NavigationMixin(LightningElement) {
     // Screen management
     @track currentScreen = 'contact'; // 'contact' or 'property'
 
@@ -299,8 +300,17 @@ export default class LeadHouseCapture extends LightningElement {
             const successes = (res || []).filter((r) => r.success);
             if (successes.length > 0) {
                 this.toast('Leads created', `Successfully created ${successes.length} lead(s).`, 'success');
-                // Reset form after successful submission
-                this.resetForm();
+                // Navigate to Lead list view
+                this[NavigationMixin.Navigate]({
+                    type: 'standard__objectPage',
+                    attributes: {
+                        objectApiName: 'Lead',
+                        actionName: 'list'
+                    },
+                    state: {
+                        filterName: 'Recent'
+                    }
+                });
             }
             const failures = (res || []).filter((r) => !r.success);
             if (failures.length > 0) {

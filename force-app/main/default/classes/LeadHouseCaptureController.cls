@@ -136,6 +136,7 @@ public with sharing class LeadHouseCaptureController {
             throw new AuraHandledException('Please provide at least one contact method: Email or Phone.');
         }
 
+        // Query properties for description details only
         Map<Id, Property__c> props = new Map<Id, Property__c>([
             SELECT Id, Name, Price__c, Beds__c, City__c, State__c
             FROM Property__c WHERE Id IN :propertyIds
@@ -152,7 +153,9 @@ public with sharing class LeadHouseCaptureController {
             l.Email = String.isBlank(email) ? null : email.trim();
             l.Phone = String.isBlank(phone) ? null : phone.trim();
             l.Company = 'Dreamhouse Prospect';
-            l.Status = 'Open - Not Contacted';
+            l.Status = 'New';
+            l.LeadSource = 'Marketing Event';
+            l.Property__c = pid; // Link lead to the selected property
             l.Description = buildDescription(p, firstName, lastName, email, phone, cityOrState, bedrooms, style, minPrice, maxPrice);
             toInsert.add(l);
         }
