@@ -1,0 +1,49 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "confirmationMessage" : {
+      "title" : "Confirmation Message",
+      "description" : "A confirmation message with the event details and a clickable link to the event",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "errorMessage" : {
+      "title" : "Error Message",
+      "description" : "Error message if the event could not be created",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "eventId" : {
+      "title" : "Event Id",
+      "description" : "The ID of the created Event record",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "eventLink" : {
+      "title" : "Event Link",
+      "description" : "The direct URL to the created Event record in Lightning Experience",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "eventRecord" : {
+      "title" : "Event Record",
+      "description" : "The reference to the Event record",
+      "lightning:type" : "lightning__recordInfoType",
+      "lightning:sObjectInfo" : {
+        "apiName" : "Event"
+      },
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}
