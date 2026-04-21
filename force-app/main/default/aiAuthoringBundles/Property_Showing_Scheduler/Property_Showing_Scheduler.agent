@@ -16,6 +16,8 @@ variables:
   match_list: mutable string = ""
   lookup_error: mutable string = ""
   event_id: mutable string = ""
+  event_link: mutable string = ""
+  event_record: mutable object = {}
   confirmation_msg: mutable string = ""
   error_msg: mutable string = ""
   lead_id: mutable string = ""
@@ -80,6 +82,11 @@ topic schedule_showing:
       outputs:
         eventId: string
           description: "The ID of the created Event record"
+        eventLink: string
+          description: "The direct URL to the created Event record in Lightning Experience"
+        eventRecord: object
+          description: "The reference to the Event record"
+          complex_data_type_name: "lightning__recordInfoType"
         confirmationMessage: string
           description: "A confirmation message with the event details and a clickable link to the event"
         errorMessage: string
@@ -92,11 +99,9 @@ topic schedule_showing:
         | The last scheduling attempt failed: {!@variables.error_msg}
         | Ask the employee to correct the information and try again.
 
-      if @variables.error_msg == "" and @variables.event_id != "":
-        | The showing has been scheduled successfully.
-        | Confirmation: {!@variables.confirmation_msg}
-        | The confirmation message contains a clickable link to the event. Display it as-is so the employee can click through.
-        | Ask if they would like to schedule another showing.
+      if @variables.error_msg == "" and @variables.event_id != "" and @variables.event_link != "":
+        | [View Event]({!@variables.event_link})
+        | Show only the event link above and do not restate the event details.
 
       if @variables.lookup_error != "":
         | The property search returned no results: {!@variables.lookup_error}
@@ -130,7 +135,12 @@ topic schedule_showing:
         description: "Schedule the property showing after the property has been identified"
         with propertyId = @variables.property_id
         with startDateTime = ...
+        with durationMinutes = ...
+        with subject = ...
+        with eventDescription = ...
         set @variables.event_id = @outputs.eventId
+        set @variables.event_link = @outputs.eventLink
+        set @variables.event_record = @outputs.eventRecord
         set @variables.confirmation_msg = @outputs.confirmationMessage
         set @variables.error_msg = @outputs.errorMessage
 
@@ -185,6 +195,11 @@ topic schedule_showing_for_lead:
       outputs:
         eventId: string
           description: "The ID of the created Event record"
+        eventLink: string
+          description: "The direct URL to the created Event record in Lightning Experience"
+        eventRecord: object
+          description: "The reference to the Event record"
+          complex_data_type_name: "lightning__recordInfoType"
         confirmationMessage: string
           description: "A confirmation message with the event details and a clickable link to the event"
         errorMessage: string
@@ -197,11 +212,9 @@ topic schedule_showing_for_lead:
         | The last scheduling attempt failed: {!@variables.error_msg}
         | Ask the employee to correct the information and try again.
 
-      if @variables.error_msg == "" and @variables.event_id != "":
-        | The showing has been scheduled successfully for lead {!@variables.lead_name}.
-        | Confirmation: {!@variables.confirmation_msg}
-        | The confirmation message contains a clickable link to the event. Display it as-is so the employee can click through.
-        | Ask if they would like to schedule another showing.
+      if @variables.error_msg == "" and @variables.event_id != "" and @variables.event_link != "":
+        | [View Event]({!@variables.event_link})
+        | Show only the event link above and do not restate the event details.
 
       if @variables.lookup_error != "":
         | The lead search encountered an issue: {!@variables.lookup_error}
@@ -240,6 +253,11 @@ topic schedule_showing_for_lead:
         with propertyId = @variables.property_id
         with leadId = @variables.lead_id
         with startDateTime = ...
+        with durationMinutes = ...
+        with subject = ...
+        with eventDescription = ...
         set @variables.event_id = @outputs.eventId
+        set @variables.event_link = @outputs.eventLink
+        set @variables.event_record = @outputs.eventRecord
         set @variables.confirmation_msg = @outputs.confirmationMessage
         set @variables.error_msg = @outputs.errorMessage
