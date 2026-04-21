@@ -1,0 +1,79 @@
+config:
+  developer_name: "Property_Showing_Scheduler"
+  agent_description: "Schedules property showing events for employees by creating calendar events linked to properties and their broker contacts"
+  agent_type: "AgentforceEmployeeAgent"
+
+system:
+  messages:
+    welcome: "Hello! I can help you schedule a property showing. Which property would you like to schedule a showing for?"
+    error: "Sorry, something went wrong while scheduling your showing. Please try again."
+  instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. When scheduling, you need the property name or ID and the desired date and time. Be concise and professional."
+
+variables:
+  event_id: mutable string = ""
+  confirmation_msg: mutable string = ""
+  error_msg: mutable string = ""
+  schedule_complete: mutable boolean = False
+
+start_agent entry:
+  description: "Entry point for property showing scheduling conversations"
+  reasoning:
+    instructions: |
+      Greet the employee and ask which property they want to schedule a showing for.
+      Route to the schedule_showing topic.
+    actions:
+      go_schedule: @utils.transition to @topic.schedule_showing
+        description: "Navigate to showing scheduler"
+
+topic schedule_showing:
+  description: "Schedules a property showing event by collecting property and datetime information, then creating a calendar event linked to the property and its broker contact"
+
+  actions:
+    create_showing:
+      description: "Creates a property showing event. Requires the property ID and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description."
+      inputs:
+        propertyId: string
+          description: "The Salesforce record ID of the Property__c record to schedule the showing for"
+          is_required: True
+          is_user_input: True
+        startDateTime: datetime
+          description: "The date and time when the property showing should begin. Must be in the future."
+          is_required: True
+          is_user_input: True
+        durationMinutes: integer
+          description: "Duration of the showing in minutes. Defaults to 30 if not provided."
+        subject: string
+          description: "Custom subject line for the event. Defaults to Property Showing if not provided."
+        eventDescription: string
+          description: "Optional description or notes for the showing event"
+      outputs:
+        eventId: string
+          description: "The ID of the created Event record"
+        confirmationMessage: string
+          description: "A confirmation message with the event details"
+        errorMessage: string
+          description: "Error message if the event could not be created"
+      target: "apex://PropertyShowingSchedulerAction"
+
+  reasoning:
+    instructions: ->
+      if @variables.schedule_complete == True:
+        | The showing has been scheduled successfully.
+        | Confirmation: {!@variables.confirmation_msg}
+        | Ask if they would like to schedule another showing.
+
+      if @variables.error_msg != "":
+        | The last scheduling attempt failed: {!@variables.error_msg}
+        | Ask the employee to correct the information and try again.
+
+      | Help the employee schedule a property showing.
+      | Ask for the property they want to show and the desired date and time.
+      | The duration defaults to 30 minutes if not specified.
+    actions:
+      schedule: @actions.create_showing
+        description: "Schedule the property showing"
+        with propertyId = ...
+        with startDateTime = ...
+        set @variables.event_id = @outputs.eventId
+        set @variables.confirmation_msg = @outputs.confirmationMessage
+        set @variables.error_msg = @outputs.errorMessage
