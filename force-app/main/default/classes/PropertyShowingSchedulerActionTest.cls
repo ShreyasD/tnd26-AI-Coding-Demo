@@ -42,6 +42,9 @@ private class PropertyShowingSchedulerActionTest {
         System.assertEquals(1, responses.size(), 'One response expected');
         System.assertEquals('', responses[0].errorMessage, 'No error expected');
         System.assertNotEquals(null, responses[0].eventId, 'Event Id should be returned');
+        System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned');
+        System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path');
+        System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain the event ID');
 
         Event createdEvent = [
             SELECT Id, WhoId, WhatId, Subject
@@ -68,6 +71,7 @@ private class PropertyShowingSchedulerActionTest {
         System.assertEquals(1, responses.size());
         System.assertEquals('Property not found for provided propertyId.', responses[0].errorMessage);
         System.assertEquals('', responses[0].eventId, 'No event should be created');
+        System.assertEquals('', responses[0].eventLink, 'No event link when error');
     }
 
     @IsTest
@@ -209,6 +213,9 @@ private class PropertyShowingSchedulerActionTest {
 
         System.assertEquals('', responses[0].errorMessage);
         System.assertNotEquals('', responses[0].eventId);
+        System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned for lead showing');
+        System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path for lead showing');
+        System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain event ID for lead showing');
 
         List<EventRelation> relations = [
             SELECT RelationId FROM EventRelation

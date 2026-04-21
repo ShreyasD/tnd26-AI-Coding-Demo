@@ -1,0 +1,252 @@
+config:
+  developer_name: "Property_Showing_Scheduler"
+  agent_description: "Schedules property showing events for employees by searching for properties by name or address, or by looking up a lead and auto-resolving their assigned property, then creating calendar events linked to properties and their broker contacts"
+  agent_type: "AgentforceEmployeeAgent"
+
+system:
+  messages:
+    welcome: "Hello! I can help you schedule a property showing. You can give me a property name or address, or tell me a lead name and I will look up their assigned property."
+    error: "Sorry, something went wrong while scheduling your showing. Please try again."
+  instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead's assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional."
+
+variables:
+  property_id: mutable string = ""
+  property_name: mutable string = ""
+  property_address: mutable string = ""
+  match_list: mutable string = ""
+  lookup_error: mutable string = ""
+  event_id: mutable string = ""
+  event_link: mutable string = ""
+  confirmation_msg: mutable string = ""
+  error_msg: mutable string = ""
+  lead_id: mutable string = ""
+  lead_name: mutable string = ""
+
+start_agent entry:
+  description: "Entry point for property showing scheduling conversations"
+  reasoning:
+    instructions: |
+      Greet the employee and ask how they would like to schedule a showing.
+      They can either provide a property name or address, or provide a lead name to look up the lead's assigned property.
+      If they mention a lead or person name in the context of scheduling for a lead, route to schedule_showing_for_lead.
+      If they mention a property name, address, or want to search by property, route to schedule_showing.
+    actions:
+      go_schedule_by_property: @utils.transition to @topic.schedule_showing
+        description: "Navigate to property-based showing scheduler"
+      go_schedule_by_lead: @utils.transition to @topic.schedule_showing_for_lead
+        description: "Navigate to lead-based showing scheduler"
+
+topic schedule_showing:
+  description: "Schedules a property showing event by first looking up the property by name or address, then creating a calendar event linked to the property and its broker contact"
+
+  actions:
+    find_property:
+      description: "Searches for a property by name, address, or city. Returns a single match or a numbered list of matches to choose from."
+      inputs:
+        searchTerm: string
+          description: "The property name, street address, or city to search for"
+          is_required: True
+          is_user_input: True
+      outputs:
+        propertyId: string
+          description: "The Salesforce record ID of the matched property (set only when exactly one match is found)"
+        propertyName: string
+          description: "The name of the matched property"
+        propertyAddress: string
+          description: "The formatted address of the matched property"
+        matchCount: integer
+          description: "The number of properties found matching the search term"
+        matchList: string
+          description: "A numbered list of matching properties when multiple results are found"
+        errorMessage: string
+          description: "Error message when no properties are found or search term is missing"
+      target: "apex://PropertyLookupAction"
+
+    create_showing:
+      description: "Creates a property showing event. Requires the property ID (resolved from a prior lookup) and a future start date/time. Optionally accepts duration in minutes, a custom subject, and event description."
+      inputs:
+        propertyId: string
+          description: "The Salesforce record ID of the Property__c record, resolved from a property lookup"
+          is_required: True
+        startDateTime: datetime
+          description: "The date and time when the property showing should begin. Must be in the future."
+          is_required: True
+          is_user_input: True
+        durationMinutes: integer
+          description: "Duration of the showing in minutes. Defaults to 30 if not provided."
+        subject: string
+          description: "Custom subject line for the event. Defaults to Property Showing if not provided."
+        eventDescription: string
+          description: "Optional description or notes for the showing event"
+      outputs:
+        eventId: string
+          description: "The ID of the created Event record"
+        eventLink: string
+          description: "The direct URL to the created Event record in Lightning Experience"
+        confirmationMessage: string
+          description: "A confirmation message with the event details and a clickable link to the event"
+        errorMessage: string
+          description: "Error message if the event could not be created"
+      target: "apex://PropertyShowingSchedulerAction"
+
+  reasoning:
+    instructions: ->
+      if @variables.error_msg != "":
+        | The last scheduling attempt failed: {!@variables.error_msg}
+        | Ask the employee to correct the information and try again.
+
+      if @variables.error_msg == "" and @variables.event_id != "":
+        | The showing has been scheduled successfully.
+        | Display this exact link for the employee: [View Event]({!@variables.event_link})
+        | IMPORTANT: Use the event_link URL exactly as provided. Do not modify, shorten, or replace it with a different URL.
+        | Ask if they would like to schedule another showing.
+
+      if @variables.lookup_error != "":
+        | The property search returned no results: {!@variables.lookup_error}
+        | Ask the employee to try a different property name or address.
+
+      if @variables.match_list != "":
+        | Multiple properties matched the search. Here are the results:
+        | {!@variables.match_list}
+        | Ask the employee to pick one by name or number, then search again with the specific property name to resolve to a single match.
+
+      if @variables.property_id != "" and @variables.event_id == "":
+        | A property has been identified: {!@variables.property_name} at {!@variables.property_address}.
+        | Now ask the employee for the desired date and time for the showing.
+        | The duration defaults to 30 minutes if not specified.
+        | Use {!@actions.schedule_showing} to create the event.
+
+      | Help the employee schedule a property showing.
+      | Ask for the property name or address they want to visit.
+      | Never ask for a Salesforce record ID. Use {!@actions.find_property_tool} to look up the property.
+    actions:
+      find_property_tool: @actions.find_property
+        description: "Search for a property by name or address"
+        with searchTerm = ...
+        set @variables.property_id = @outputs.propertyId
+        set @variables.property_name = @outputs.propertyName
+        set @variables.property_address = @outputs.propertyAddress
+        set @variables.match_list = @outputs.matchList
+        set @variables.lookup_error = @outputs.errorMessage
+
+      schedule_showing: @actions.create_showing
+        description: "Schedule the property showing after the property has been identified"
+        with propertyId = @variables.property_id
+        with startDateTime = ...
+        set @variables.event_id = @outputs.eventId
+        set @variables.event_link = @outputs.eventLink
+        set @variables.confirmation_msg = @outputs.confirmationMessage
+        set @variables.error_msg = @outputs.errorMessage
+
+topic schedule_showing_for_lead:
+  description: "Schedules a property showing for a lead by looking up the lead by name, auto-resolving their assigned property, and creating a calendar event linked to the property and its broker contact"
+
+  actions:
+    find_lead:
+      description: "Searches for a lead by name. Returns the lead details and their assigned property information. If the lead has a property, the property ID, name, and address are auto-resolved."
+      inputs:
+        searchTerm: string
+          description: "The lead name to search for"
+          is_required: True
+          is_user_input: True
+      outputs:
+        leadId: string
+          description: "The Salesforce record ID of the matched lead (set only when exactly one match is found)"
+        leadName: string
+          description: "The name of the matched lead"
+        propertyId: string
+          description: "The Salesforce record ID of the property assigned to the lead"
+        propertyName: string
+          description: "The name of the property assigned to the lead"
+        propertyAddress: string
+          description: "The formatted address of the property assigned to the lead"
+        matchCount: integer
+          description: "The number of leads found matching the search term"
+        matchList: string
+          description: "A numbered list of matching leads when multiple results are found"
+        errorMessage: string
+          description: "Error message when no leads are found, search term is missing, or lead has no property"
+      target: "apex://LeadLookupAction"
+
+    create_showing_for_lead:
+      description: "Creates a property showing event for a lead. Requires the property ID (auto-resolved from the lead lookup) and a future start date/time. The lead is added as a related party on the event."
+      inputs:
+        propertyId: string
+          description: "The Salesforce record ID of the Property__c record, auto-resolved from the lead's assigned property"
+          is_required: True
+        startDateTime: datetime
+          description: "The date and time when the property showing should begin. Must be in the future."
+          is_required: True
+          is_user_input: True
+        durationMinutes: integer
+          description: "Duration of the showing in minutes. Defaults to 30 if not provided."
+        subject: string
+          description: "Custom subject line for the event. Defaults to Property Showing if not provided."
+        eventDescription: string
+          description: "Optional description or notes for the showing event"
+        leadId: string
+          description: "The Salesforce record ID of the Lead to associate with the event as a related party"
+      outputs:
+        eventId: string
+          description: "The ID of the created Event record"
+        eventLink: string
+          description: "The direct URL to the created Event record in Lightning Experience"
+        confirmationMessage: string
+          description: "A confirmation message with the event details and a clickable link to the event"
+        errorMessage: string
+          description: "Error message if the event could not be created"
+      target: "apex://PropertyShowingSchedulerAction"
+
+  reasoning:
+    instructions: ->
+      if @variables.error_msg != "":
+        | The last scheduling attempt failed: {!@variables.error_msg}
+        | Ask the employee to correct the information and try again.
+
+      if @variables.error_msg == "" and @variables.event_id != "":
+        | The showing has been scheduled successfully for lead {!@variables.lead_name}.
+        | Display this exact link for the employee: [View Event]({!@variables.event_link})
+        | IMPORTANT: Use the event_link URL exactly as provided. Do not modify, shorten, or replace it with a different URL.
+        | Ask if they would like to schedule another showing.
+
+      if @variables.lookup_error != "":
+        | The lead search encountered an issue: {!@variables.lookup_error}
+        | If the lead has no property assigned, let the employee know they need to assign a property to the lead first.
+        | Otherwise ask them to try a different lead name.
+
+      if @variables.match_list != "":
+        | Multiple leads matched the search. Here are the results:
+        | {!@variables.match_list}
+        | Ask the employee to pick one by name or number, then search again with the specific lead name to resolve to a single match.
+
+      if @variables.lead_id != "" and @variables.property_id != "" and @variables.event_id == "":
+        | Lead identified: {!@variables.lead_name}
+        | Their assigned property: {!@variables.property_name} at {!@variables.property_address}
+        | Now ask the employee for the desired date and time for the showing.
+        | The duration defaults to 30 minutes if not specified.
+        | Use {!@actions.schedule_lead_showing} to create the event.
+
+      | Help the employee schedule a property showing for a lead.
+      | Ask for the lead name they want to schedule a showing for.
+      | Never ask for a Salesforce record ID. Use {!@actions.find_lead_tool} to look up the lead.
+    actions:
+      find_lead_tool: @actions.find_lead
+        description: "Search for a lead by name to resolve their assigned property"
+        with searchTerm = ...
+        set @variables.lead_id = @outputs.leadId
+        set @variables.lead_name = @outputs.leadName
+        set @variables.property_id = @outputs.propertyId
+        set @variables.property_name = @outputs.propertyName
+        set @variables.property_address = @outputs.propertyAddress
+        set @variables.match_list = @outputs.matchList
+        set @variables.lookup_error = @outputs.errorMessage
+
+      schedule_lead_showing: @actions.create_showing_for_lead
+        description: "Schedule the property showing after the lead and property have been identified"
+        with propertyId = @variables.property_id
+        with leadId = @variables.lead_id
+        with startDateTime = ...
+        set @variables.event_id = @outputs.eventId
+        set @variables.event_link = @outputs.eventLink
+        set @variables.confirmation_msg = @outputs.confirmationMessage
+        set @variables.error_msg = @outputs.errorMessage
