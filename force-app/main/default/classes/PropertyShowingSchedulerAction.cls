@@ -131,11 +131,11 @@ global with sharing class PropertyShowingSchedulerAction {
             }
 
             Broker__c brokerRecord = brokersById.get(propertyRecord.Broker__c);
-            req.brokerContactId = brokerRecord.Contact__c;
             if (brokerRecord == null || brokerRecord.Contact__c == null) {
                 resp.errorMessage = 'No broker contact found on the property broker.';
                 continue;
             }
+            req.brokerContactId = brokerRecord.Contact__c;
 
             Integer duration = req.durationMinutes != null && req.durationMinutes > 0
                 ? req.durationMinutes
