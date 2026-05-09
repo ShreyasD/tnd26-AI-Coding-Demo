@@ -1,9 +1,14 @@
 ##.DS_Store
-**/.DS_Store
+.DS_Store
 
+##.cursorignore
+.cursorignore
+
+##sf
+.sf/  
 
 ##sfdx
-.sfdx/
+.sfdx/   
 
 ##agentforce rules
 .a4drules/
