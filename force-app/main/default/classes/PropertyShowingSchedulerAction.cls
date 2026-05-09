@@ -159,9 +159,14 @@ global with sharing class PropertyShowingSchedulerAction {
             String eventSubject = buildEventSubject(leadRecord, propertyRecord);
 
             Event eventRecord = new Event(
+<<<<<<< HEAD
                 WhoId = leadRecord == null ? null : leadRecord.Id,
                 WhatId = leadRecord == null ? propertyRecord.Id : null,
                 Subject = eventSubject,
+=======
+                WhatId = propertyRecord.Id,
+                Subject = String.isBlank(req.subject) ? 'Property Showing' : req.subject,
+>>>>>>> origin
                 Description = req.eventDescription,
                 Location = propertyAddress,
                 StartDateTime = req.startDateTime,
@@ -176,12 +181,19 @@ global with sharing class PropertyShowingSchedulerAction {
                 new Map<String, Object>{
                     'requestIndex' => i,
                     'propertyId' => String.valueOf(propertyRecord.Id),
+<<<<<<< HEAD
                     'leadId' => leadRecord == null ? null : String.valueOf(leadRecord.Id),
                     'brokerContactId' => req.brokerContactId,
                     'startDateTime' => String.valueOf(req.startDateTime),
                     'durationMinutes' => duration,
                     'subject' => eventSubject,
                     'location' => propertyAddress
+=======
+                    'leadId' => req.leadId,
+                    'brokerContactId' => req.brokerContactId,
+                    'startDateTime' => String.valueOf(req.startDateTime),
+                    'durationMinutes' => duration
+>>>>>>> origin
                 }
             );
             // #endregion
@@ -191,7 +203,11 @@ global with sharing class PropertyShowingSchedulerAction {
 
         if (!eventsToInsert.isEmpty()) {
             Database.SaveResult[] saveResults = Database.insert(eventsToInsert, false);
+<<<<<<< HEAD
             List<EventRelation> relatedContacts = new List<EventRelation>();
+=======
+            List<EventRelation> leadRelations = new List<EventRelation>();
+>>>>>>> origin
             for (Integer pos = 0; pos < saveResults.size(); pos++) {
                 Integer reqIdx = eventRequestIndexes[pos];
                 Response resp = responses[reqIdx];
@@ -199,8 +215,13 @@ global with sharing class PropertyShowingSchedulerAction {
                     resp.eventId = String.valueOf(saveResults[pos].getId());
                     String baseUrl = URL.getOrgDomainURL().toExternalForm();
                     resp.eventLink = baseUrl + '/lightning/r/Event/' + resp.eventId + '/view';
+<<<<<<< HEAD
                     resp.confirmationMessage = 'Property showing scheduled! Event link: '
                         + resp.eventLink;
+=======
+                    resp.confirmationMessage = 'Property showing scheduled! '
+                        + '[View Event](' + resp.eventLink + ')';
+>>>>>>> origin
                     // #region agent log
                     logDebug(
                         'initial',
@@ -221,7 +242,11 @@ global with sharing class PropertyShowingSchedulerAction {
 
                     // Add the event record to the response
                     Event eventRecord = [
+<<<<<<< HEAD
                         SELECT Id, WhoId, WhatId, Property__c, Subject, Description, Location, StartDateTime, EndDateTime
+=======
+                        SELECT Id, WhoId, WhatId, Subject, Description, StartDateTime, EndDateTime
+>>>>>>> origin
                         FROM Event
                         WHERE Id = :resp.eventId
                         LIMIT 1
@@ -239,12 +264,16 @@ global with sharing class PropertyShowingSchedulerAction {
                             'eventRecordId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.Id),
                             'eventRecordWhatId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.WhatId),
                             'eventRecordWhoId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.WhoId),
+<<<<<<< HEAD
                             'eventRecordPropertyId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.Property__c),
+=======
+>>>>>>> origin
                             'errorMessage' => resp.errorMessage
                         }
                     );
                     // #endregion
 
+<<<<<<< HEAD
                     Id brokerContactId = parseId(requests[reqIdx].brokerContactId);
                     if (brokerContactId != null) {
                         relatedContacts.add(new EventRelation(
@@ -252,6 +281,23 @@ global with sharing class PropertyShowingSchedulerAction {
                             RelationId = brokerContactId,
                             IsInvitee = false,
                             IsParent = false,
+=======
+                    Id parsedLeadId = parseId(requests[reqIdx].leadId);
+                    if (parsedLeadId != null) {
+                        leadRelations.add(new EventRelation(
+                            EventId = saveResults[pos].getId(),
+                            RelationId = parsedLeadId,
+                            IsInvitee = false, //(this used to be true)
+                            IsParent = true,
+                            IsWhat = false
+                        ));
+
+                        leadRelations.add(new EventRelation(
+                            EventId = saveResults[pos].getId(),
+                            RelationId = requests[reqIdx].brokerContactId,
+                            IsInvitee = false, //(this used to be true)
+                            IsParent = true,
+>>>>>>> origin
                             IsWhat = false
                         ));
                     }
@@ -271,8 +317,13 @@ global with sharing class PropertyShowingSchedulerAction {
                     // #endregion
                 }
             }
+<<<<<<< HEAD
             if (!relatedContacts.isEmpty()) {
                 Database.insert(relatedContacts, false);
+=======
+            if (!leadRelations.isEmpty()) {
+                Database.insert(leadRelations, false);
+>>>>>>> origin
                 // #region agent log
                 logDebug(
                     'initial',
@@ -280,7 +331,11 @@ global with sharing class PropertyShowingSchedulerAction {
                     'PropertyShowingSchedulerAction.cls:createPropertyEvent:leadRelations',
                     'Inserted lead relations',
                     new Map<String, Object>{
+<<<<<<< HEAD
                         'contactRelationCount' => relatedContacts.size()
+=======
+                        'leadRelationCount' => leadRelations.size()
+>>>>>>> origin
                     }
                 );
                 // #endregion
@@ -341,6 +396,7 @@ global with sharing class PropertyShowingSchedulerAction {
         }));
     }
 
+<<<<<<< HEAD
     private static String buildEventSubject(Lead leadRecord, Property__c propertyRecord) {
         String propertyName = propertyRecord == null || String.isBlank(propertyRecord.Name)
             ? 'Property'
@@ -371,6 +427,8 @@ global with sharing class PropertyShowingSchedulerAction {
         return addressParts.isEmpty() ? null : String.join(addressParts, ', ');
     }
 
+=======
+>>>>>>> origin
     private static Id parseId(String candidate) {
         try {
             return (Id) candidate?.trim();

@@ -1,9 +1,4 @@
 global with sharing class LeadLookupAction {
-    private class SearchCriteria {
-        String leadTerm;
-        String propertyTerm;
-    }
-
     global class Request {
         @InvocableVariable(required=true)
         public String searchTerm;
@@ -55,40 +50,16 @@ global with sharing class LeadLookupAction {
             return resp;
         }
 
-        SearchCriteria criteria = parseSearchCriteria(req.searchTerm.trim());
-        String escapedLeadTerm = '%' + escapeLike(criteria.leadTerm) + '%';
-        String escapedPropertyTerm = String.isBlank(criteria.propertyTerm)
-            ? null
-            : '%' + escapeLike(criteria.propertyTerm) + '%';
-
-        List<Lead> matches;
-        if (String.isBlank(escapedPropertyTerm)) {
-            matches = [
-                SELECT Id, Name,
-                       Property__c, Property__r.Name,
-                       Property__r.Address__c, Property__r.City__c, Property__r.State__c
-                FROM Lead
-                WHERE Name LIKE :escapedLeadTerm
-                ORDER BY Name ASC
-                LIMIT 10
-            ];
-        } else {
-            matches = [
-                SELECT Id, Name,
-                       Property__c, Property__r.Name,
-                       Property__r.Address__c, Property__r.City__c, Property__r.State__c
-                FROM Lead
-                WHERE Name LIKE :escapedLeadTerm
-                    AND Property__c != null
-                    AND (
-                        Property__r.Name LIKE :escapedPropertyTerm
-                        OR Property__r.Address__c LIKE :escapedPropertyTerm
-                        OR Property__r.City__c LIKE :escapedPropertyTerm
-                    )
-                ORDER BY Name ASC
-                LIMIT 10
-            ];
-        }
+        String escapedTerm = '%' + escapeLike(req.searchTerm.trim()) + '%';
+        List<Lead> matches = [
+            SELECT Id, Name,
+                   Property__c, Property__r.Name,
+                   Property__r.Address__c, Property__r.City__c, Property__r.State__c
+            FROM Lead
+            WHERE Name LIKE :escapedTerm
+            ORDER BY Name ASC
+            LIMIT 10
+        ];
 
         resp.matchCount = matches.size();
 
@@ -136,45 +107,6 @@ global with sharing class LeadLookupAction {
             parts.add(p.State__c);
         }
         return parts.isEmpty() ? '' : String.join(parts, ', ');
-    }
-
-    private static SearchCriteria parseSearchCriteria(String searchTerm) {
-        SearchCriteria criteria = new SearchCriteria();
-        criteria.leadTerm = searchTerm;
-
-        for (String delimiter : new List<String>{ ' assigned to ', ' for property ', ' at property ' }) {
-            Integer delimiterIdx = searchTerm.toLowerCase().indexOf(delimiter);
-            if (delimiterIdx > 0) {
-                String leadTerm = searchTerm.substring(0, delimiterIdx).trim();
-                String propertyTerm = searchTerm.substring(delimiterIdx + delimiter.length()).trim();
-                if (String.isNotBlank(leadTerm) && String.isNotBlank(propertyTerm)) {
-                    criteria.leadTerm = stripWrappingQuotes(leadTerm);
-                    criteria.propertyTerm = stripWrappingQuotes(propertyTerm);
-                    return criteria;
-                }
-            }
-        }
-
-        criteria.leadTerm = stripWrappingQuotes(criteria.leadTerm);
-        return criteria;
-    }
-
-    private static String stripWrappingQuotes(String value) {
-        if (String.isBlank(value)) {
-            return value;
-        }
-
-        String trimmedValue = value.trim();
-        if (
-            trimmedValue.length() >= 2 &&
-            (
-                (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
-                (trimmedValue.startsWith('\'') && trimmedValue.endsWith('\''))
-            )
-        ) {
-            return trimmedValue.substring(1, trimmedValue.length() - 1).trim();
-        }
-        return trimmedValue;
     }
 
     private static String escapeLike(String input) {

@@ -43,8 +43,11 @@ private class PropertyShowingSchedulerActionTest {
         System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned');
         System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path');
         System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain the event ID');
+<<<<<<< HEAD
         System.assert(responses[0].confirmationMessage.contains('Event link: '), 'Confirmation should include plain event URL label');
         System.assert(responses[0].confirmationMessage.contains(responses[0].eventLink), 'Confirmation should include the raw event link');
+=======
+>>>>>>> origin
 
         Event createdEvent = [
             SELECT Id, WhoId, WhatId, Property__c, Subject, Location
@@ -292,6 +295,67 @@ private class PropertyShowingSchedulerActionTest {
             WHERE EventId = :responses[0].eventId AND RelationId = :c.Id
         ];
         System.assertEquals(1, brokerRelations.size(), 'Broker contact should still be related when no lead is provided');
+    }
+
+    @IsTest
+    static void addsLeadAsEventRelationWhenLeadIdProvided() {
+        Contact c = new Contact(LastName = 'Lead Relation Contact');
+        insert c;
+        Property__c propertyRecord = makePropertyWithBrokerContact(c);
+
+        Lead ld = new Lead(LastName = 'Showing Lead', Company = 'Test Co', Property__c = propertyRecord.Id);
+        insert ld;
+
+        PropertyShowingSchedulerAction.Request req = new PropertyShowingSchedulerAction.Request();
+        req.propertyId = propertyRecord.Id;
+        req.startDateTime = System.now().addDays(1);
+        req.leadId = ld.Id;
+
+        Test.startTest();
+        List<PropertyShowingSchedulerAction.Response> responses =
+            PropertyShowingSchedulerAction.createPropertyEvent(
+                new List<PropertyShowingSchedulerAction.Request>{ req }
+            );
+        Test.stopTest();
+
+        System.assertEquals('', responses[0].errorMessage);
+        System.assertNotEquals('', responses[0].eventId);
+        System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned for lead showing');
+        System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path for lead showing');
+        System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain event ID for lead showing');
+
+        List<EventRelation> relations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND RelationId = :ld.Id
+        ];
+        System.assertEquals(1, relations.size(), 'Lead should be added as an event relation');
+    }
+
+    @IsTest
+    static void skipsLeadRelationWhenLeadIdIsNull() {
+        Contact c = new Contact(LastName = 'No Lead Contact');
+        insert c;
+        Property__c propertyRecord = makePropertyWithBrokerContact(c);
+
+        PropertyShowingSchedulerAction.Request req = new PropertyShowingSchedulerAction.Request();
+        req.propertyId = propertyRecord.Id;
+        req.startDateTime = System.now().addDays(1);
+
+        Test.startTest();
+        List<PropertyShowingSchedulerAction.Response> responses =
+            PropertyShowingSchedulerAction.createPropertyEvent(
+                new List<PropertyShowingSchedulerAction.Request>{ req }
+            );
+        Test.stopTest();
+
+        System.assertEquals('', responses[0].errorMessage);
+        System.assertNotEquals('', responses[0].eventId);
+
+        List<EventRelation> leadRelations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND Relation.Type = 'Lead'
+        ];
+        System.assertEquals(0, leadRelations.size(), 'No lead relation when leadId is null');
     }
 
     @IsTest

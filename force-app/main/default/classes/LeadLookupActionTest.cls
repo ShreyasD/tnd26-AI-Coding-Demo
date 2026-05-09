@@ -83,28 +83,6 @@ private class LeadLookupActionTest {
     }
 
     @IsTest
-    static void resolvesLeadWhenSearchTermIncludesAssignedProperty() {
-        Property__c p1 = createProperty('Modern City Living', '1 Main St', 'Austin', 'TX');
-        Property__c p2 = createProperty('Lakeside Retreat', '99 Lake Rd', 'Austin', 'TX');
-        Lead matchingLead = createLead('Matt Norton', 'Alpha LLC', p1);
-        createLead('Matt Norton', 'Bravo LLC', p2);
-
-        LeadLookupAction.Request req = new LeadLookupAction.Request();
-        req.searchTerm = 'Matt Norton assigned to Modern City Living';
-
-        List<LeadLookupAction.Response> responses =
-            LeadLookupAction.findLead(new List<LeadLookupAction.Request>{ req });
-
-        System.assertEquals(1, responses.size());
-        System.assertEquals(1, responses[0].matchCount, 'Property-qualified lead search should resolve to one lead');
-        System.assertEquals(matchingLead.Id, responses[0].leadId);
-        System.assertEquals(p1.Id, responses[0].propertyId);
-        System.assertEquals('Modern City Living', responses[0].propertyName);
-        System.assertEquals('', responses[0].matchList);
-        System.assertEquals('', responses[0].errorMessage);
-    }
-
-    @IsTest
     static void returnsErrorWhenNoMatchesFound() {
         LeadLookupAction.Request req = new LeadLookupAction.Request();
         req.searchTerm = 'Zzzyxyz Nonexistent';

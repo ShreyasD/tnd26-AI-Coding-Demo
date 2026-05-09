@@ -6,7 +6,9 @@ config:
 system:
   messages:
     welcome: "Hello! I can help you schedule a property showing. You can give me a property name or address, or tell me a lead name and I will look up their assigned property."
+    welcome: "Hello! I can help you schedule a property showing. You can give me a property name or address, or tell me a lead name and I will look up their assigned property."
     error: "Sorry, something went wrong while scheduling your showing. Please try again."
+  instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead's assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional."
   instructions: "You are a property showing scheduling assistant. You help employees schedule showing events for properties. You support two workflows: (1) search by property name or address, or (2) search by lead name to auto-resolve the lead's assigned property. Never ask for a Salesforce record ID. Once the property is identified, collect the desired date and time. Be concise and professional."
 
 variables:
@@ -15,11 +17,20 @@ variables:
   property_address: mutable string = ""
   match_list: mutable string = ""
   lookup_error: mutable string = ""
+  property_id: mutable string = ""
+  property_name: mutable string = ""
+  property_address: mutable string = ""
+  match_list: mutable string = ""
+  lookup_error: mutable string = ""
   event_id: mutable string = ""
+  event_link: mutable string = ""
+  event_record: mutable object = {}
   event_link: mutable string = ""
   event_record: mutable object = {}
   confirmation_msg: mutable string = ""
   error_msg: mutable string = ""
+  lead_id: mutable string = ""
+  lead_name: mutable string = ""
   lead_id: mutable string = ""
   lead_name: mutable string = ""
 
@@ -31,7 +42,15 @@ start_agent entry:
       They can either provide a property name or address, or provide a lead name to look up the lead's assigned property.
       If they mention a lead or person name in the context of scheduling for a lead, route to schedule_showing_for_lead.
       If they mention a property name, address, or want to search by property, route to schedule_showing.
+      Greet the employee and ask how they would like to schedule a showing.
+      They can either provide a property name or address, or provide a lead name to look up the lead's assigned property.
+      If they mention a lead or person name in the context of scheduling for a lead, route to schedule_showing_for_lead.
+      If they mention a property name, address, or want to search by property, route to schedule_showing.
     actions:
+      go_schedule_by_property: @utils.transition to @topic.schedule_showing
+        description: "Navigate to property-based showing scheduler"
+      go_schedule_by_lead: @utils.transition to @topic.schedule_showing_for_lead
+        description: "Navigate to lead-based showing scheduler"
       go_schedule_by_property: @utils.transition to @topic.schedule_showing
         description: "Navigate to property-based showing scheduler"
       go_schedule_by_lead: @utils.transition to @topic.schedule_showing_for_lead
@@ -63,10 +82,33 @@ topic schedule_showing:
           description: "Error message when no properties are found or search term is missing"
       target: "apex://PropertyLookupAction"
 
+    find_property:
+      description: "Searches for a property by name, address, or city. Returns a single match or a numbered list of matches to choose from."
+      inputs:
+        searchTerm: string
+          description: "The property name, street address, or city to search for"
+          is_required: True
+          is_user_input: True
+      outputs:
+        propertyId: string
+          description: "The Salesforce record ID of the matched property (set only when exactly one match is found)"
+        propertyName: string
+          description: "The name of the matched property"
+        propertyAddress: string
+          description: "The formatted address of the matched property"
+        matchCount: integer
+          description: "The number of properties found matching the search term"
+        matchList: string
+          description: "A numbered list of matching properties when multiple results are found"
+        errorMessage: string
+          description: "Error message when no properties are found or search term is missing"
+      target: "apex://PropertyLookupAction"
+
     create_showing:
       description: "Creates a property showing event. Requires the property ID (resolved from a prior lookup) and a future start date/time. The action automatically sets the property lookup, the location from the property address, and the subject from the resolved property details."
       inputs:
         propertyId: string
+          description: "The Salesforce record ID of the Property__c record, resolved from a property lookup"
           description: "The Salesforce record ID of the Property__c record, resolved from a property lookup"
           is_required: True
         startDateTime: datetime
@@ -82,6 +124,11 @@ topic schedule_showing:
       outputs:
         eventId: string
           description: "The ID of the created Event record"
+        eventLink: string
+          description: "The direct URL to the created Event record in Lightning Experience"
+        eventRecord: object
+          description: "The reference to the Event record"
+          complex_data_type_name: "lightning__recordInfoType"
         eventLink: string
           description: "The direct URL to the created Event record in Lightning Experience"
         eventRecord: object
@@ -259,11 +306,31 @@ topic schedule_showing_for_lead:
         description: "Schedule the property showing after the lead and property have been identified"
         with propertyId = @variables.property_id
         with leadId = @variables.lead_id
+      find_lead_tool: @actions.find_lead
+        description: "Search for a lead by name to resolve their assigned property"
+        with searchTerm = ...
+        set @variables.lead_id = @outputs.leadId
+        set @variables.lead_name = @outputs.leadName
+        set @variables.property_id = @outputs.propertyId
+        set @variables.property_name = @outputs.propertyName
+        set @variables.property_address = @outputs.propertyAddress
+        set @variables.match_list = @outputs.matchList
+        set @variables.lookup_error = @outputs.errorMessage
+
+      schedule_lead_showing: @actions.create_showing_for_lead
+        description: "Schedule the property showing after the lead and property have been identified"
+        with propertyId = @variables.property_id
+        with leadId = @variables.lead_id
         with startDateTime = ...
         with durationMinutes = ...
         with subject = ...
         with eventDescription = ...
+        with durationMinutes = ...
+        with subject = ...
+        with eventDescription = ...
         set @variables.event_id = @outputs.eventId
+        set @variables.event_link = @outputs.eventLink
+        set @variables.event_record = @outputs.eventRecord
         set @variables.event_link = @outputs.eventLink
         set @variables.event_record = @outputs.eventRecord
         set @variables.confirmation_msg = @outputs.confirmationMessage
