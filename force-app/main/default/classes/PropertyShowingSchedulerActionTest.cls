@@ -21,7 +21,7 @@ private class PropertyShowingSchedulerActionTest {
     }
 
     @IsTest
-    static void schedulesEventUsingBrokerContactWhenContactMissing() {
+    static void schedulesEventUsingBrokerContactAsRelatedContact() {
         Contact c = new Contact(LastName = 'Broker Contact');
         insert c;
         Property__c propertyRecord = makePropertyWithBrokerContact(c);
@@ -30,8 +30,6 @@ private class PropertyShowingSchedulerActionTest {
         req.propertyId = propertyRecord.Id;
         req.startDateTime = System.now().addDays(1);
         req.durationMinutes = 45;
-        req.subject = 'Showing Appointment';
-
         Test.startTest();
         List<PropertyShowingSchedulerAction.Response> responses =
             PropertyShowingSchedulerAction.createPropertyEvent(
@@ -45,16 +43,27 @@ private class PropertyShowingSchedulerActionTest {
         System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned');
         System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path');
         System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain the event ID');
+        System.assert(responses[0].confirmationMessage.contains('Event link: '), 'Confirmation should include plain event URL label');
+        System.assert(responses[0].confirmationMessage.contains(responses[0].eventLink), 'Confirmation should include the raw event link');
 
         Event createdEvent = [
-            SELECT Id, WhoId, WhatId, Subject
+            SELECT Id, WhoId, WhatId, Property__c, Subject, Location
             FROM Event
             WHERE Id = :responses[0].eventId
             LIMIT 1
         ];
-        System.assertEquals(c.Id, createdEvent.WhoId, 'Event should be linked to broker contact');
-        System.assertEquals(propertyRecord.Id, createdEvent.WhatId, 'Event should be linked to property');
-        System.assertEquals('Showing Appointment', createdEvent.Subject);
+        System.assertEquals(null, createdEvent.WhoId, 'Property-only showing should not set WhoId');
+        System.assertEquals(propertyRecord.Id, createdEvent.WhatId, 'Property should be stored on WhatId');
+        System.assertEquals(null, createdEvent.Property__c, 'Custom property lookup should not be used');
+        System.assertEquals('Property Showing (123 Testing Ave)', createdEvent.Subject);
+        System.assertEquals('123 Testing Ave, San Francisco, CA, 94105', createdEvent.Location);
+
+        List<EventRelation> contactRelations = [
+            SELECT RelationId
+            FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND RelationId = :c.Id
+        ];
+        System.assertEquals(1, contactRelations.size(), 'Broker contact should be added as an event relation');
     }
 
     @IsTest
@@ -185,13 +194,16 @@ private class PropertyShowingSchedulerActionTest {
 
         System.assertEquals('', responses[0].errorMessage);
         Event createdEvent = [
-            SELECT Subject FROM Event WHERE Id = :responses[0].eventId LIMIT 1
+            SELECT Subject, WhatId, Property__c, Location FROM Event WHERE Id = :responses[0].eventId LIMIT 1
         ];
-        System.assertEquals('Property Showing', createdEvent.Subject);
+        System.assertEquals('Property Showing (123 Testing Ave)', createdEvent.Subject);
+        System.assertEquals(propertyRecord.Id, createdEvent.WhatId);
+        System.assertEquals(null, createdEvent.Property__c);
+        System.assertEquals('123 Testing Ave, San Francisco, CA, 94105', createdEvent.Location);
     }
 
     @IsTest
-    static void addsLeadAsEventRelationWhenLeadIdProvided() {
+    static void setsLeadOnWhoIdAndUsesDerivedSubjectWhenLeadIdProvided() {
         Contact c = new Contact(LastName = 'Lead Relation Contact');
         insert c;
         Property__c propertyRecord = makePropertyWithBrokerContact(c);
@@ -216,12 +228,26 @@ private class PropertyShowingSchedulerActionTest {
         System.assertNotEquals('', responses[0].eventLink, 'Event link should be returned for lead showing');
         System.assert(responses[0].eventLink.contains('/lightning/r/Event/'), 'Event link should contain correct path for lead showing');
         System.assert(responses[0].eventLink.contains(responses[0].eventId), 'Event link should contain event ID for lead showing');
+        System.assert(responses[0].confirmationMessage.contains('Event link: '), 'Lead confirmation should include plain event URL label');
+        System.assert(responses[0].confirmationMessage.contains(responses[0].eventLink), 'Lead confirmation should include the raw event link');
 
-        List<EventRelation> relations = [
-            SELECT RelationId FROM EventRelation
-            WHERE EventId = :responses[0].eventId AND RelationId = :ld.Id
+        Event createdEvent = [
+            SELECT WhoId, WhatId, Property__c, Subject, Location
+            FROM Event
+            WHERE Id = :responses[0].eventId
+            LIMIT 1
         ];
-        System.assertEquals(1, relations.size(), 'Lead should be added as an event relation');
+        System.assertEquals(ld.Id, createdEvent.WhoId, 'Lead should be stored on WhoId');
+        System.assertEquals(null, createdEvent.WhatId, 'Lead showings should leave WhatId blank due to Salesforce activity restrictions');
+        System.assertEquals(null, createdEvent.Property__c, 'Custom property lookup should not be used for lead showings');
+        System.assertEquals('Property Showing - Showing Lead (123 Testing Ave)', createdEvent.Subject);
+        System.assertEquals('123 Testing Ave, San Francisco, CA, 94105', createdEvent.Location);
+
+        List<EventRelation> brokerRelations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND RelationId = :c.Id
+        ];
+        System.assertEquals(1, brokerRelations.size(), 'Broker contact should be added as an event relation');
     }
 
     @IsTest
@@ -244,11 +270,28 @@ private class PropertyShowingSchedulerActionTest {
         System.assertEquals('', responses[0].errorMessage);
         System.assertNotEquals('', responses[0].eventId);
 
+        Event createdEvent = [
+            SELECT WhoId, WhatId, Property__c, Subject
+            FROM Event
+            WHERE Id = :responses[0].eventId
+            LIMIT 1
+        ];
+        System.assertEquals(null, createdEvent.WhoId, 'Lead should not be set when leadId is null');
+        System.assertEquals(propertyRecord.Id, createdEvent.WhatId);
+        System.assertEquals(null, createdEvent.Property__c);
+        System.assertEquals('Property Showing (123 Testing Ave)', createdEvent.Subject);
+
         List<EventRelation> leadRelations = [
             SELECT RelationId FROM EventRelation
             WHERE EventId = :responses[0].eventId AND Relation.Type = 'Lead'
         ];
         System.assertEquals(0, leadRelations.size(), 'No lead relation when leadId is null');
+
+        List<EventRelation> brokerRelations = [
+            SELECT RelationId FROM EventRelation
+            WHERE EventId = :responses[0].eventId AND RelationId = :c.Id
+        ];
+        System.assertEquals(1, brokerRelations.size(), 'Broker contact should still be related when no lead is provided');
     }
 
     @IsTest

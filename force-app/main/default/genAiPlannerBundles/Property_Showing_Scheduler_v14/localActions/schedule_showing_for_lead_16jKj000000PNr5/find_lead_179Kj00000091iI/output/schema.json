@@ -1,0 +1,70 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "errorMessage" : {
+      "title" : "Error Message",
+      "description" : "Error message when no leads are found, search term is missing, or lead has no property",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "leadId" : {
+      "title" : "Lead Id",
+      "description" : "The Salesforce record ID of the matched lead (set only when exactly one match is found)",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "leadName" : {
+      "title" : "Lead Name",
+      "description" : "The name of the matched lead",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "matchCount" : {
+      "title" : "Match Count",
+      "description" : "The number of leads found matching the search term",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "matchList" : {
+      "title" : "Match List",
+      "description" : "A numbered list of matching leads when multiple results are found",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "propertyAddress" : {
+      "title" : "Property Address",
+      "description" : "The formatted address of the property assigned to the lead",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "propertyId" : {
+      "title" : "Property Id",
+      "description" : "The Salesforce record ID of the property assigned to the lead",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    },
+    "propertyName" : {
+      "title" : "Property Name",
+      "description" : "The name of the property assigned to the lead",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : false,
+      "copilotAction:isUsedByPlanner" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}
