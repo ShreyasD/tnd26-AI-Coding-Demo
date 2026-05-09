@@ -16,4 +16,4 @@ force-app/main/default/lwc/jsconfig.json
 .sf/config.json
 
 ##Demo recordings
-demo/UC2_EmployeeSchedulingAgent/v0.0.4/Property_Showing_Event_Remap.mov
+*.mov
