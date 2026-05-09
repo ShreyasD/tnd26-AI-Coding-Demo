@@ -300,6 +300,10 @@ export default class LeadHouseCapture extends NavigationMixin(LightningElement) 
             const successes = (res || []).filter((r) => r.success);
             if (successes.length > 0) {
                 this.toast('Leads created', `Successfully created ${successes.length} lead(s).`, 'success');
+<<<<<<< HEAD
+                // Reset form after successful submission
+                this.resetForm();
+=======
                 // Navigate to Lead list view
                 this[NavigationMixin.Navigate]({
                     type: 'standard__objectPage',
@@ -311,6 +315,7 @@ export default class LeadHouseCapture extends NavigationMixin(LightningElement) 
                         filterName: 'Recent'
                     }
                 });
+>>>>>>> origin
             }
             const failures = (res || []).filter((r) => !r.success);
             if (failures.length > 0) {
