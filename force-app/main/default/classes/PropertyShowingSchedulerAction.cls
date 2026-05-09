@@ -40,18 +40,6 @@ global with sharing class PropertyShowingSchedulerAction {
 
     @InvocableMethod(label='Create Property Event')
     global static List<Response> createPropertyEvent(List<Request> requests) {
-        // #region agent log
-        logDebug(
-            'initial',
-            'H1,H3,H4,H5',
-            'PropertyShowingSchedulerAction.cls:createPropertyEvent:entry',
-            'Entered createPropertyEvent',
-            new Map<String, Object>{
-                'requestCount' => requests == null ? 0 : requests.size(),
-                'hasRequests' => requests != null && !requests.isEmpty()
-            }
-        );
-        // #endregion
         if (requests == null || requests.isEmpty()) {
             return new List<Response>();
         }
@@ -167,24 +155,6 @@ global with sharing class PropertyShowingSchedulerAction {
                 StartDateTime = req.startDateTime,
                 EndDateTime = req.startDateTime.addMinutes(duration)
             );
-            // #region agent log
-            logDebug(
-                'initial',
-                'H4,H5',
-                'PropertyShowingSchedulerAction.cls:createPropertyEvent:preInsert',
-                'Prepared event for insert',
-                new Map<String, Object>{
-                    'requestIndex' => i,
-                    'propertyId' => String.valueOf(propertyRecord.Id),
-                    'leadId' => leadRecord == null ? null : String.valueOf(leadRecord.Id),
-                    'brokerContactId' => req.brokerContactId,
-                    'startDateTime' => String.valueOf(req.startDateTime),
-                    'durationMinutes' => duration,
-                    'subject' => eventSubject,
-                    'location' => propertyAddress
-                }
-            );
-            // #endregion
             eventsToInsert.add(eventRecord);
             eventRequestIndexes.add(i);
         }
@@ -201,23 +171,6 @@ global with sharing class PropertyShowingSchedulerAction {
                     resp.eventLink = baseUrl + '/lightning/r/Event/' + resp.eventId + '/view';
                     resp.confirmationMessage = 'Property showing scheduled! Event link: '
                         + resp.eventLink;
-                    // #region agent log
-                    logDebug(
-                        'initial',
-                        'H1,H2,H3,H4,H5',
-                        'PropertyShowingSchedulerAction.cls:createPropertyEvent:postInsert',
-                        'Event insert succeeded',
-                        new Map<String, Object>{
-                            'requestIndex' => reqIdx,
-                            'eventId' => resp.eventId,
-                            'eventLink' => resp.eventLink,
-                            'leadId' => requests[reqIdx].leadId,
-                            'brokerContactId' => requests[reqIdx].brokerContactId,
-                            'confirmationMessage' => resp.confirmationMessage,
-                            'baseUrlPresent' => !String.isBlank(baseUrl)
-                        }
-                    );
-                    // #endregion
 
                     // Add the event record to the response
                     Event eventRecord = [
@@ -227,23 +180,6 @@ global with sharing class PropertyShowingSchedulerAction {
                         LIMIT 1
                     ];
                     resp.eventRecord = eventRecord;
-                    // #region agent log
-                    logDebug(
-                        'initial',
-                        'H1,H2,H3,H5',
-                        'PropertyShowingSchedulerAction.cls:createPropertyEvent:responseAssembly',
-                        'Assembled successful response payload',
-                        new Map<String, Object>{
-                            'requestIndex' => reqIdx,
-                            'eventId' => resp.eventId,
-                            'eventRecordId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.Id),
-                            'eventRecordWhatId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.WhatId),
-                            'eventRecordWhoId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.WhoId),
-                            'eventRecordPropertyId' => resp.eventRecord == null ? null : String.valueOf(resp.eventRecord.Property__c),
-                            'errorMessage' => resp.errorMessage
-                        }
-                    );
-                    // #endregion
 
                     Id brokerContactId = parseId(requests[reqIdx].brokerContactId);
                     if (brokerContactId != null) {
@@ -257,88 +193,14 @@ global with sharing class PropertyShowingSchedulerAction {
                     }
                 } else {
                     resp.errorMessage = saveResults[pos].getErrors()[0].getMessage();
-                    // #region agent log
-                    logDebug(
-                        'initial',
-                        'H4,H5',
-                        'PropertyShowingSchedulerAction.cls:createPropertyEvent:insertError',
-                        'Event insert failed',
-                        new Map<String, Object>{
-                            'requestIndex' => reqIdx,
-                            'errorMessage' => resp.errorMessage
-                        }
-                    );
-                    // #endregion
                 }
             }
             if (!relatedContacts.isEmpty()) {
                 Database.insert(relatedContacts, false);
-                // #region agent log
-                logDebug(
-                    'initial',
-                    'H4,H5',
-                    'PropertyShowingSchedulerAction.cls:createPropertyEvent:leadRelations',
-                    'Inserted lead relations',
-                    new Map<String, Object>{
-                        'contactRelationCount' => relatedContacts.size()
-                    }
-                );
-                // #endregion
             }
         }
 
-        // #region agent log
-        logDebug(
-            'initial',
-            'H1,H2,H3,H4,H5',
-            'PropertyShowingSchedulerAction.cls:createPropertyEvent:return',
-            'Returning responses to agent',
-            new Map<String, Object>{
-                'responseCount' => responses.size(),
-                'successCount' => countSuccessResponses(responses),
-                'errorCount' => countErrorResponses(responses)
-            }
-        );
-        // #endregion
         return responses;
-    }
-
-    private static Integer countSuccessResponses(List<Response> responses) {
-        Integer successCount = 0;
-        for (Response responseItem : responses) {
-            if (responseItem != null && String.isBlank(responseItem.errorMessage) && !String.isBlank(responseItem.eventId)) {
-                successCount++;
-            }
-        }
-        return successCount;
-    }
-
-    private static Integer countErrorResponses(List<Response> responses) {
-        Integer errorCount = 0;
-        for (Response responseItem : responses) {
-            if (responseItem != null && !String.isBlank(responseItem.errorMessage)) {
-                errorCount++;
-            }
-        }
-        return errorCount;
-    }
-
-    private static void logDebug(
-        String runId,
-        String hypothesisId,
-        String location,
-        String message,
-        Map<String, Object> data
-    ) {
-        System.debug(LoggingLevel.ERROR, JSON.serialize(new Map<String, Object>{
-            'sessionId' => '6581d0',
-            'runId' => runId,
-            'hypothesisId' => hypothesisId,
-            'location' => location,
-            'message' => message,
-            'data' => data,
-            'timestamp' => Datetime.now().getTime()
-        }));
     }
 
     private static String buildEventSubject(Lead leadRecord, Property__c propertyRecord) {
