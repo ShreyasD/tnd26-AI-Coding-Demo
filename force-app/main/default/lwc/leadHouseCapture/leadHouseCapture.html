@@ -243,6 +243,23 @@ Multi-screen form: Screen 1 = Contact Info, Screen 2 = Property Search
                 </template>
 
                 <div class="slds-m-top_medium">
+                    <!-- Toggle for Single Lead Mode -->
+                    <template if:true={selectedCount}>
+                        <div class="slds-m-bottom_small">
+                            <lightning-input
+                                type="toggle"
+                                label="Create Single Lead"
+                                message-toggle-active="One lead for all properties"
+                                message-toggle-inactive="One lead per property"
+                                checked={singleLeadMode}
+                                onchange={handleToggleChange}
+                            ></lightning-input>
+                            <div class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                {submitHelpText}
+                            </div>
+                        </div>
+                    </template>
+
                     <lightning-button
                         variant="neutral"
                         label="Back"
@@ -252,8 +269,8 @@ Multi-screen form: Screen 1 = Contact Info, Screen 2 = Property Search
                     ></lightning-button>
                     <lightning-button
                         variant="brand"
-                        label="Submit Leads"
-                        title="Submit Leads"
+                        label={submitButtonLabel}
+                        title={submitButtonLabel}
                         onclick={handleSubmit}
                         disabled={isSubmitDisabled}
                     ></lightning-button>

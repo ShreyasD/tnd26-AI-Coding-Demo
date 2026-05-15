@@ -5,6 +5,7 @@ import { NavigationMixin } from 'lightning/navigation';
 // Apex methods
 import searchProperties from '@salesforce/apex/LeadHouseCaptureController.searchProperties';
 import createLeadsForProperties from '@salesforce/apex/LeadHouseCaptureController.createLeadsForProperties';
+import createSingleLeadForProperties from '@salesforce/apex/LeadHouseCaptureController.createSingleLeadForProperties';
 import getDistinctStylesFromTags from '@salesforce/apex/LeadHouseCaptureController.getDistinctStylesFromTags';
 
 export default class LeadHouseCapture extends NavigationMixin(LightningElement) {
@@ -33,6 +34,24 @@ export default class LeadHouseCapture extends NavigationMixin(LightningElement) 
     @track selectedMap = new Map(); // propertyId -> true
     isSearching = false;
     hasSearched = false;
+
+    // ========== TOGGLE & MODE MANAGEMENT ==========
+    @track singleLeadMode = false; // Toggle: OFF = one lead per property, ON = single lead for all
+
+    handleToggleChange = (e) => {
+        this.singleLeadMode = e.target.checked;
+    };
+
+    get submitButtonLabel() {
+        return this.singleLeadMode ? 'Submit Lead' : 'Submit Leads';
+    }
+
+    get submitHelpText() {
+        if (this.singleLeadMode) {
+            return `Creating 1 lead for ${this.selectedCount} ${this.selectedCount === 1 ? 'property' : 'properties'}`;
+        }
+        return `Creating ${this.selectedCount} separate ${this.selectedCount === 1 ? 'lead' : 'leads'}`;
+    }
 
     // Screen computed properties
     get isContactScreen() {
@@ -274,12 +293,23 @@ export default class LeadHouseCapture extends NavigationMixin(LightningElement) 
         return this.selectedMap.size;
     }
 
-    // Submit leads with contact information
+    // ========== SUBMISSION ROUTING ==========
     async handleSubmit() {
         if (this.selectedCount === 0) {
             this.toast('No selection', 'Please select at least one property to submit.', 'info');
             return;
         }
+
+        // Route to appropriate submission method based on toggle
+        if (this.singleLeadMode) {
+            await this.submitSingleLead();
+        } else {
+            await this.submitMultipleLeads();
+        }
+    }
+
+    // ========== MULTIPLE LEADS MODE (EXISTING FUNCTIONALITY) ==========
+    async submitMultipleLeads() {
         // Collect selected property Ids preserving display order
         const ids = this.properties.filter((p) => p.selected).map((p) => p.id).slice(0, 3);
 
@@ -321,6 +351,46 @@ export default class LeadHouseCapture extends NavigationMixin(LightningElement) 
             this.toast('Submit failed', this.errorMessage(e), 'error');
         }
     }
+
+    // ========== SINGLE LEAD MODE (NEW FUNCTIONALITY) ==========
+    async submitSingleLead() {
+        // Collect selected property Ids preserving display order
+        const ids = this.properties.filter((p) => p.selected).map((p) => p.id).slice(0, 3);
+
+        try {
+            const result = await createSingleLeadForProperties({
+                propertyIds: ids,
+                firstName: (this.firstName || '').trim(),
+                lastName: (this.lastName || '').trim(),
+                email: (this.email || '').trim(),
+                phone: (this.phone || '').trim(),
+                cityOrState: (this.cityOrState || '').trim(),
+                bedrooms: this.minBedrooms,
+                style: this.selectedStyle || '',
+                minPrice: this.minPrice,
+                maxPrice: this.maxPrice
+            });
+
+            if (result.success) {
+                this.toast('Lead created', result.message, 'success');
+                // Navigate to the single Lead record
+                this[NavigationMixin.Navigate]({
+                    type: 'standard__recordPage',
+                    attributes: {
+                        recordId: result.leadId,
+                        objectApiName: 'Lead',
+                        actionName: 'view'
+                    }
+                });
+            } else {
+                this.toast('Submit failed', result.message, 'error');
+            }
+        } catch (e) {
+            this.toast('Submit failed', this.errorMessage(e), 'error');
+        }
+    }
+
+    // ========== SHARED UTILITIES ==========
 
     // Utilities
     toast(title, message, variant) {

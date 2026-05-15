@@ -18,6 +18,14 @@ public with sharing class LeadHouseCaptureController {
         @AuraEnabled public String message;
     }
 
+    public class SingleLeadResult {
+        @AuraEnabled public Id leadId;
+        @AuraEnabled public Boolean success;
+        @AuraEnabled public String message;
+        @AuraEnabled public List<Id> propertyInterestIds;
+        @AuraEnabled public Integer propertyCount;
+    }
+
     @AuraEnabled(cacheable=true)
     public static List<String> getDistinctStylesFromTags() {
         // Derive style options from unique values in Property__c.Tags__c (semicolon- or comma-separated)
@@ -185,6 +193,134 @@ public with sharing class LeadHouseCaptureController {
             }
         }
         return results;
+    }
+
+    // ========== SINGLE LEAD MODE: Create one lead for all selected properties ==========
+    @AuraEnabled
+    public static SingleLeadResult createSingleLeadForProperties(
+        List<Id> propertyIds,
+        String firstName,
+        String lastName,
+        String email,
+        String phone,
+        String cityOrState,
+        Integer bedrooms,
+        String style,
+        Decimal minPrice,
+        Decimal maxPrice
+    ) {
+        SingleLeadResult result = new SingleLeadResult();
+        result.propertyInterestIds = new List<Id>();
+        result.propertyCount = 0;
+        
+        if (propertyIds == null || propertyIds.isEmpty()) {
+            throw new AuraHandledException('No properties selected.');
+        }
+        
+        // Enforce max 3
+        if (propertyIds.size() > 3) {
+            throw new AuraHandledException('You can only submit up to 3 properties at a time.');
+        }
+        
+        // Validate required contact fields
+        if (String.isBlank(firstName) || String.isBlank(lastName)) {
+            throw new AuraHandledException('First Name and Last Name are required.');
+        }
+        
+        // Validate at least one contact method
+        if (String.isBlank(email) && String.isBlank(phone)) {
+            throw new AuraHandledException('Please provide at least one contact method: Email or Phone.');
+        }
+
+        // Query properties for description details
+        Map<Id, Property__c> props = new Map<Id, Property__c>([
+            SELECT Id, Name, Price__c, Beds__c, City__c, State__c
+            FROM Property__c WHERE Id IN :propertyIds
+        ]);
+
+        try {
+            // Create single Lead record
+            Lead newLead = new Lead();
+            newLead.FirstName = firstName.trim();
+            newLead.LastName = lastName.trim();
+            newLead.Email = String.isBlank(email) ? null : email.trim();
+            newLead.Phone = String.isBlank(phone) ? null : phone.trim();
+            newLead.Company = 'Dreamhouse Prospect';
+            newLead.Status = 'New';
+            newLead.LeadSource = 'Marketing Event';
+            newLead.Description = buildSingleLeadDescription(props.values(), firstName, lastName, email, phone, cityOrState, bedrooms, style, minPrice, maxPrice);
+            
+            insert newLead;
+            result.leadId = newLead.Id;
+            
+            // Create Property_Interest__c junction records
+            List<Property_Interest__c> interests = new List<Property_Interest__c>();
+            for (Id propertyId : propertyIds) {
+                if (props.containsKey(propertyId)) {
+                    Property_Interest__c interest = new Property_Interest__c();
+                    interest.Lead__c = newLead.Id;
+                    interest.Property__c = propertyId;
+                    interests.add(interest);
+                }
+            }
+            
+            if (!interests.isEmpty()) {
+                insert interests;
+                for (Property_Interest__c interest : interests) {
+                    result.propertyInterestIds.add(interest.Id);
+                }
+            }
+            
+            result.success = true;
+            result.propertyCount = interests.size();
+            result.message = 'Successfully created 1 lead with ' + interests.size() + ' property interest(s).';
+            
+        } catch (DmlException e) {
+            result.success = false;
+            result.message = 'Failed to create lead: ' + e.getDmlMessage(0);
+        } catch (Exception e) {
+            result.success = false;
+            result.message = 'Error: ' + e.getMessage();
+        }
+        
+        return result;
+    }
+
+    // ========== SHARED UTILITY METHODS ==========
+    
+    private static String buildSingleLeadDescription(List<Property__c> properties, String firstName, String lastName, String email, String phone, String cityOrState, Integer bedrooms, String style, Decimal minPrice, Decimal maxPrice) {
+        List<String> lines = new List<String>();
+        lines.add('Lead generated from Dreamhouse Home LWC (Single Lead Mode).');
+        lines.add('Contact: ' + firstName + ' ' + lastName);
+        if (!String.isBlank(email)) {
+            lines.add('Email: ' + email);
+        }
+        if (!String.isBlank(phone)) {
+            lines.add('Phone: ' + phone);
+        }
+        lines.add('');
+        lines.add('Interested in ' + properties.size() + ' Properties:');
+        for (Property__c p : properties) {
+            lines.add('- ' + p.Name + ' (' + String.valueOf(p.Id) + ')');
+            lines.add('  Price=' + String.valueOf(p.Price__c) + ', Beds=' + String.valueOf(p.Beds__c) + ', City=' + p.City__c + ', State=' + p.State__c);
+        }
+        lines.add('');
+        lines.add('Buyer Preferences:');
+        lines.add('- City/State: ' + (String.isBlank(cityOrState) ? 'Any' : cityOrState));
+        lines.add('- Bedrooms: ' + (bedrooms == null ? 'Any' : String.valueOf(bedrooms) + '+'));
+        lines.add('- Style: ' + (String.isBlank(style) ? 'Any' : style));
+        String pricePref;
+        if (minPrice != null && maxPrice != null) pricePref = '$' + minPrice.setScale(0) + ' to $' + maxPrice.setScale(0);
+        else if (minPrice != null) pricePref = '$' + minPrice.setScale(0) + '+';
+        else if (maxPrice != null) pricePref = '<= $' + maxPrice.setScale(0);
+        else pricePref = 'Any';
+        lines.add('- Price Range: ' + pricePref);
+        // Safe join for older Apex versions
+        String out = '';
+        for (Integer i = 0; i < lines.size(); i++) {
+            out += (i == 0 ? '' : '\n') + lines[i];
+        }
+        return out;
     }
 
     private static String buildDescription(Property__c p, String firstName, String lastName, String email, String phone, String cityOrState, Integer bedrooms, String style, Decimal minPrice, Decimal maxPrice) {

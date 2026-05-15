@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Property__c</fullName>
+    <label>Property</label>
+    <description>Links this Property Interest to the Property the lead is interested in</description>
+    <inlineHelpText>The Property record that the lead has expressed interest in</inlineHelpText>
+    <type>Lookup</type>
+    <referenceTo>Property__c</referenceTo>
+    <relationshipLabel>Property Interests</relationshipLabel>
+    <relationshipName>Property_Interests</relationshipName>
+    <required>true</required>
+    <deleteConstraint>Cascade</deleteConstraint>
+</CustomField>

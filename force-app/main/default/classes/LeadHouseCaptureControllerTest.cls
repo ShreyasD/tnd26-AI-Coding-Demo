@@ -253,4 +253,245 @@ private class LeadHouseCaptureControllerTest {
         }
         System.assert(threw, 'Expected AuraHandledException due to exceeding limit');
     }
+
+    // ========== SINGLE LEAD MODE TESTS ==========
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_Success() {
+        List<Property__c> props = [SELECT Id, Name FROM Property__c WHERE City__c = 'Austin' ORDER BY Name LIMIT 2];
+        System.assertEquals(2, props.size(), 'Two Austin properties expected for test');
+
+        Test.startTest();
+        LeadHouseCaptureController.SingleLeadResult result =
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>{ props[0].Id, props[1].Id },
+                'Sarah',
+                'Williams',
+                'sarah.williams@example.com',
+                '555-7890',
+                'Austin',
+                2,
+                'Condo',
+                250000,
+                600000
+            );
+        Test.stopTest();
+
+        // Verify result
+        System.assert(result.success, 'Single lead creation should succeed');
+        System.assertNotEquals(null, result.leadId, 'Lead Id should be present');
+        System.assertEquals(2, result.propertyCount, 'Should have 2 property interests');
+        System.assertEquals(2, result.propertyInterestIds.size(), 'Should have 2 Property Interest Ids');
+
+        // Verify Lead
+        Lead created = [SELECT Id, FirstName, LastName, Email, Phone, Company, Status, Description, Property__c 
+                        FROM Lead WHERE Id = :result.leadId];
+        System.assertEquals('Sarah', created.FirstName);
+        System.assertEquals('Williams', created.LastName);
+        System.assertEquals('sarah.williams@example.com', created.Email);
+        System.assertEquals('555-7890', created.Phone);
+        System.assertEquals('Dreamhouse Prospect', created.Company);
+        System.assertEquals(null, created.Property__c, 'Property__c should be null in single lead mode');
+        System.assert(created.Description.contains('Single Lead Mode'), 'Description should indicate single lead mode');
+        System.assert(created.Description.contains('Interested in 2 Properties'), 'Description should list property count');
+
+        // Verify Property_Interest__c records
+        List<Property_Interest__c> interests = [SELECT Id, Lead__c, Property__c 
+                                                FROM Property_Interest__c 
+                                                WHERE Lead__c = :result.leadId];
+        System.assertEquals(2, interests.size(), 'Should have 2 Property Interest junction records');
+        
+        Set<Id> linkedPropertyIds = new Set<Id>();
+        for (Property_Interest__c pi : interests) {
+            System.assertEquals(result.leadId, pi.Lead__c, 'Each Property Interest should link to the created Lead');
+            linkedPropertyIds.add(pi.Property__c);
+        }
+        System.assert(linkedPropertyIds.contains(props[0].Id), 'First property should be linked');
+        System.assert(linkedPropertyIds.contains(props[1].Id), 'Second property should be linked');
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_WithEmailOnly() {
+        List<Property__c> props = [SELECT Id, Name FROM Property__c LIMIT 3];
+
+        Test.startTest();
+        LeadHouseCaptureController.SingleLeadResult result =
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>{ props[0].Id, props[1].Id, props[2].Id },
+                'Mike',
+                'Davis',
+                'mike.davis@example.com',
+                '',
+                'Texas',
+                3,
+                'Townhouse',
+                400000,
+                800000
+            );
+        Test.stopTest();
+
+        System.assert(result.success);
+        System.assertEquals(3, result.propertyCount);
+        
+        Lead created = [SELECT Id, Email, Phone FROM Lead WHERE Id = :result.leadId];
+        System.assertEquals('mike.davis@example.com', created.Email);
+        System.assertEquals(null, created.Phone);
+
+        List<Property_Interest__c> interests = [SELECT Id FROM Property_Interest__c WHERE Lead__c = :result.leadId];
+        System.assertEquals(3, interests.size(), 'Should have 3 Property Interest records');
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_WithPhoneOnly() {
+        List<Property__c> props = [SELECT Id, Name FROM Property__c LIMIT 2];
+
+        Test.startTest();
+        LeadHouseCaptureController.SingleLeadResult result =
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>{ props[0].Id, props[1].Id },
+                'Lisa',
+                'Anderson',
+                '',
+                '555-3456',
+                'Colorado',
+                4,
+                'Single Family',
+                600000,
+                1000000
+            );
+        Test.stopTest();
+
+        System.assert(result.success);
+        System.assertEquals(2, result.propertyCount);
+        
+        Lead created = [SELECT Id, Email, Phone FROM Lead WHERE Id = :result.leadId];
+        System.assertEquals(null, created.Email);
+        System.assertEquals('555-3456', created.Phone);
+
+        List<Property_Interest__c> interests = [SELECT Id FROM Property_Interest__c WHERE Lead__c = :result.leadId];
+        System.assertEquals(2, interests.size());
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_MissingContactInfo() {
+        Property__c p = [SELECT Id FROM Property__c LIMIT 1];
+
+        Test.startTest();
+        Boolean threw = false;
+        try {
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>{ p.Id },
+                '',
+                'Smith',
+                'test@example.com',
+                '555-1234',
+                'Austin',
+                2,
+                'Condo',
+                200000,
+                400000
+            );
+        } catch (AuraHandledException ahe) {
+            threw = true;
+            System.assert(ahe.getMessage().contains('First Name and Last Name are required'));
+        }
+        Test.stopTest();
+        
+        System.assert(threw, 'Expected AuraHandledException for missing FirstName');
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_MissingEmailAndPhone() {
+        Property__c p = [SELECT Id FROM Property__c LIMIT 1];
+
+        Test.startTest();
+        Boolean threw = false;
+        try {
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>{ p.Id },
+                'John',
+                'Doe',
+                '',
+                '',
+                'Austin',
+                2,
+                'Condo',
+                200000,
+                400000
+            );
+        } catch (AuraHandledException ahe) {
+            threw = true;
+            System.assert(ahe.getMessage().contains('at least one contact method'));
+        }
+        Test.stopTest();
+        
+        System.assert(threw, 'Expected AuraHandledException for missing contact methods');
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_EnforceMaxThree() {
+        List<Property__c> ps = [SELECT Id FROM Property__c LIMIT 3];
+        
+        // Add a 4th to exceed limit
+        Property__c extra = new Property__c(
+            Name = 'Extra Home',
+            Price__c = 450000,
+            Beds__c = 3,
+            City__c = 'Austin',
+            State__c = 'TX',
+            Tags__c = 'Townhouse'
+        );
+        insert extra;
+
+        List<Id> ids = new List<Id>{ ps[0].Id, ps[1].Id, ps[2].Id, extra.Id };
+
+        Boolean threw = false;
+        try {
+            Test.startTest();
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                ids,
+                'John',
+                'Doe',
+                'john.doe@example.com',
+                '555-1234',
+                null,
+                null,
+                null,
+                null,
+                null
+            );
+            Test.stopTest();
+        } catch (AuraHandledException ahe) {
+            threw = true;
+            System.assert(ahe.getMessage().contains('only submit up to 3'));
+        }
+        
+        System.assert(threw, 'Expected AuraHandledException due to exceeding limit');
+    }
+
+    @IsTest
+    static void testCreateSingleLeadForProperties_EmptyPropertyList() {
+        Boolean threw = false;
+        try {
+            Test.startTest();
+            LeadHouseCaptureController.createSingleLeadForProperties(
+                new List<Id>(),
+                'John',
+                'Doe',
+                'john.doe@example.com',
+                '555-1234',
+                'Austin',
+                2,
+                'Condo',
+                200000,
+                400000
+            );
+            Test.stopTest();
+        } catch (AuraHandledException ahe) {
+            threw = true;
+            System.assert(ahe.getMessage().contains('No properties selected'));
+        }
+        
+        System.assert(threw, 'Expected AuraHandledException for empty property list');
+    }
 }

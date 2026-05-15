@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Property Interest</label>
+    <pluralLabel>Property Interests</pluralLabel>
+    <description>Junction object linking Leads to Properties they are interested in. Used to track multiple property interests for a single lead.</description>
+    <nameField>
+        <label>Property Interest Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>PI-{0000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <visibility>Public</visibility>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+</CustomObject>
